@@ -1,13 +1,24 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const cookieSession = require('cookie-session');
 const pool = require('./db');
+const adminRouter = require('./routes/admin');
 
 const app = express();
 const port = process.env.PORT || 3001;
 
-app.use(cors());
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
+app.use(
+  cookieSession({
+    name: 'session',
+    keys: [process.env.SESSION_SECRET],
+    maxAge: 24 * 60 * 60 * 1000,
+  })
+);
+
+app.use('/admin', adminRouter);
 
 app.get('/health', async (req, res) => {
   try {
