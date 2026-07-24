@@ -4,6 +4,8 @@ const cors = require('cors');
 const cookieSession = require('cookie-session');
 const pool = require('./db');
 const adminRouter = require('./routes/admin');
+const authRouter = require('./routes/auth');
+const merchantRouter = require('./routes/merchant');
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -19,6 +21,8 @@ app.use(
 );
 
 app.use('/admin', adminRouter);
+app.use('/auth', authRouter);
+app.use('/merchant', merchantRouter);
 
 app.get('/health', async (req, res) => {
   try {

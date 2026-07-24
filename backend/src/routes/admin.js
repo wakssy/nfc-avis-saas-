@@ -2,6 +2,7 @@ const express = require('express');
 const pool = require('../db');
 const requireAdmin = require('../middleware/requireAdmin');
 const generateId = require('../lib/generateId');
+const { hashPassword } = require('../lib/password');
 
 const router = express.Router();
 
@@ -27,29 +28,30 @@ router.get('/me', (req, res) => {
 
 router.get('/etablissements', requireAdmin, async (req, res) => {
   const result = await pool.query(
-    'SELECT id, nom, lien_google_avis, date_creation FROM etablissements ORDER BY date_creation DESC'
+    'SELECT id, nom, lien_google_avis, email, date_creation FROM etablissements ORDER BY date_creation DESC'
   );
   res.json(result.rows);
 });
 
 router.post('/etablissements', requireAdmin, async (req, res) => {
-  const { nom, lien_google_avis, id } = req.body;
+  const { nom, lien_google_avis, id, email, password } = req.body;
 
   if (!nom || !lien_google_avis) {
     return res.status(400).json({ error: 'nom et lien_google_avis sont requis' });
   }
 
   const finalId = id && id.trim() ? id.trim() : generateId();
+  const passwordHash = password ? await hashPassword(password) : null;
 
   try {
     const result = await pool.query(
-      'INSERT INTO etablissements (id, nom, lien_google_avis) VALUES ($1, $2, $3) RETURNING id, nom, lien_google_avis, date_creation',
-      [finalId, nom, lien_google_avis]
+      'INSERT INTO etablissements (id, nom, lien_google_avis, email, password_hash) VALUES ($1, $2, $3, $4, $5) RETURNING id, nom, lien_google_avis, email, date_creation',
+      [finalId, nom, lien_google_avis, email || null, passwordHash]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
     if (err.code === '23505') {
-      return res.status(409).json({ error: `L'identifiant "${finalId}" est déjà utilisé` });
+      return res.status(409).json({ error: `L'identifiant ou l'email est déjà utilisé` });
     }
     console.error(err);
     res.status(500).json({ error: 'Erreur serveur' });

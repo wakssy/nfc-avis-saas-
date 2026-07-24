@@ -6,6 +6,7 @@ interface Etablissement {
   id: string;
   nom: string;
   lien_google_avis: string;
+  email: string | null;
   date_creation: string;
 }
 
@@ -14,6 +15,8 @@ function AdminDashboard() {
   const [nom, setNom] = useState('');
   const [lienGoogleAvis, setLienGoogleAvis] = useState('');
   const [idPersonnalise, setIdPersonnalise] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -44,6 +47,8 @@ function AdminDashboard() {
         nom,
         lien_google_avis: lienGoogleAvis,
         id: idPersonnalise || undefined,
+        email: email || undefined,
+        password: password || undefined,
       }),
     });
 
@@ -51,6 +56,8 @@ function AdminDashboard() {
       setNom('');
       setLienGoogleAvis('');
       setIdPersonnalise('');
+      setEmail('');
+      setPassword('');
       loadEtablissements();
     } else {
       const data = await res.json();
@@ -94,6 +101,20 @@ function AdminDashboard() {
           onChange={(e) => setIdPersonnalise(e.target.value)}
           style={{ width: '100%', padding: 8, marginBottom: 8 }}
         />
+        <input
+          type="email"
+          placeholder="Email du commerçant (optionnel, pour lui créer un accès dashboard)"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          style={{ width: '100%', padding: 8, marginBottom: 8 }}
+        />
+        <input
+          type="password"
+          placeholder="Mot de passe du commerçant (optionnel)"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          style={{ width: '100%', padding: 8, marginBottom: 8 }}
+        />
         <button type="submit" style={{ padding: 8 }}>Ajouter</button>
         {error && <p style={{ color: 'red' }}>{error}</p>}
       </form>
@@ -104,6 +125,7 @@ function AdminDashboard() {
             <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>ID</th>
             <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>Nom</th>
             <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>Lien avis Google</th>
+            <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>Email compte</th>
             <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>Créé le</th>
           </tr>
         </thead>
@@ -117,6 +139,7 @@ function AdminDashboard() {
                   {e.lien_google_avis}
                 </a>
               </td>
+              <td>{e.email || '—'}</td>
               <td>{new Date(e.date_creation).toLocaleString('fr-FR')}</td>
             </tr>
           ))}
