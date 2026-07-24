@@ -1,0 +1,7 @@
+{
+  "rewrites": [
+    { "source": "/r/:path*", "destination": "https://REPLACE_WITH_RAILWAY_URL/r/:path*" },
+    { "source": "/api/:path*", "destination": "https://REPLACE_WITH_RAILWAY_URL/api/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

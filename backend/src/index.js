@@ -10,6 +10,8 @@ const merchantRouter = require('./routes/merchant');
 const app = express();
 const port = process.env.PORT || 3001;
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(
@@ -17,12 +19,14 @@ app.use(
     name: 'session',
     keys: [process.env.SESSION_SECRET],
     maxAge: 24 * 60 * 60 * 1000,
+    secure: isProduction,
+    sameSite: 'lax',
   })
 );
 
-app.use('/admin', adminRouter);
-app.use('/auth', authRouter);
-app.use('/merchant', merchantRouter);
+app.use('/api/admin', adminRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/merchant', merchantRouter);
 
 app.get('/health', async (req, res) => {
   try {
