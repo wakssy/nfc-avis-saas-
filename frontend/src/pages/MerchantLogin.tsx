@@ -26,29 +26,38 @@ function MerchantLogin() {
   }
 
   return (
-    <div style={{ maxWidth: 320, margin: '80px auto', fontFamily: 'sans-serif' }}>
-      <h1>Mon compte</h1>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          style={{ width: '100%', padding: 8, marginBottom: 8 }}
-          autoFocus
-        />
-        <input
-          type="password"
-          placeholder="Mot de passe"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={{ width: '100%', padding: 8, marginBottom: 8 }}
-        />
-        <button type="submit" style={{ width: '100%', padding: 8 }}>
-          Se connecter
-        </button>
-      </form>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+    <div className="center-page">
+      <div className="container-narrow" style={{ width: '100%' }}>
+        <div className="card">
+          <div className="logo-mark">
+            avis<span>plaque</span>
+          </div>
+          <p className="subtitle" style={{ marginBottom: 20 }}>
+            Connexion à votre dashboard
+          </p>
+          <form onSubmit={handleSubmit}>
+            <input
+              className="input"
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoFocus
+            />
+            <input
+              className="input"
+              type="password"
+              placeholder="Mot de passe"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
+              Se connecter
+            </button>
+          </form>
+          {error && <p className="error-text">{error}</p>}
+        </div>
+      </div>
     </div>
   );
 }

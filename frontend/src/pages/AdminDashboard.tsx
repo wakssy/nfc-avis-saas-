@@ -82,27 +82,40 @@ function EtablissementRow({
     return (
       <tr>
         <td>{e.id}</td>
-        <td colSpan={4}>
-          <input value={nom} onChange={(ev) => setNom(ev.target.value)} style={{ marginRight: 4 }} />
-          <input value={lien} onChange={(ev) => setLien(ev.target.value)} style={{ marginRight: 4, width: 220 }} />
-          <input
-            type="email"
-            value={email}
-            onChange={(ev) => setEmail(ev.target.value)}
-            placeholder="email"
-            style={{ marginRight: 4 }}
-          />
-          <input
-            type="number"
-            min={0}
-            value={objectif}
-            onChange={(ev) => setObjectif(ev.target.value)}
-            placeholder="objectif mensuel"
-            style={{ marginRight: 4, width: 130 }}
-          />
-          <button onClick={handleSave}>Enregistrer</button>{' '}
-          <button onClick={() => setEditing(false)}>Annuler</button>
-          {error && <p style={{ color: 'red' }}>{error}</p>}
+        <td colSpan={5}>
+          <div className="field-row" style={{ marginBottom: 6 }}>
+            <input className="input" value={nom} onChange={(ev) => setNom(ev.target.value)} placeholder="Nom" />
+            <input
+              className="input"
+              value={lien}
+              onChange={(ev) => setLien(ev.target.value)}
+              placeholder="Lien avis Google"
+              style={{ minWidth: 220 }}
+            />
+            <input
+              className="input"
+              type="email"
+              value={email}
+              onChange={(ev) => setEmail(ev.target.value)}
+              placeholder="Email"
+            />
+            <input
+              className="input"
+              type="number"
+              min={0}
+              value={objectif}
+              onChange={(ev) => setObjectif(ev.target.value)}
+              placeholder="Objectif mensuel"
+              style={{ maxWidth: 130 }}
+            />
+          </div>
+          <button className="btn btn-primary btn-sm" onClick={handleSave}>
+            Enregistrer
+          </button>{' '}
+          <button className="btn btn-sm" onClick={() => setEditing(false)}>
+            Annuler
+          </button>
+          {error && <p className="error-text">{error}</p>}
         </td>
       </tr>
     );
@@ -110,28 +123,44 @@ function EtablissementRow({
 
   return (
     <tr>
-      <td>{e.id}</td>
+      <td>
+        <code>{e.id}</code>
+      </td>
       <td>{e.nom}</td>
       <td>
-        <a href={e.lien_google_avis} target="_blank" rel="noreferrer">
-          {e.lien_google_avis}
+        <a href={e.lien_google_avis} target="_blank" rel="noreferrer" className="link">
+          Voir la fiche
         </a>
       </td>
       <td>
         {e.a_un_compte ? (
-          <span>Actif ({e.email})</span>
+          <span className="badge badge-success">Actif · {e.email}</span>
         ) : (
-          <>
-            <span>{e.invitation_en_attente ? 'Invitation envoyée' : 'Aucun accès'}</span>{' '}
-            <button onClick={handleInvite}>{e.invitation_en_attente ? 'Renvoyer' : 'Inviter'}</button>
-          </>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span className="badge badge-muted">
+              {e.invitation_en_attente ? 'Invitation envoyée' : 'Aucun accès'}
+            </span>
+            <button className="btn btn-sm" onClick={handleInvite}>
+              {e.invitation_en_attente ? 'Renvoyer' : 'Inviter'}
+            </button>
+          </div>
         )}
       </td>
-      <td>{new Date(e.date_creation).toLocaleString('fr-FR')}</td>
+      <td style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
+        {new Date(e.date_creation).toLocaleDateString('fr-FR')}
+      </td>
       <td>
-        <Link to={`/admin/etablissements/${e.id}`}>Voir stats</Link>{' '}
-        <button onClick={() => setEditing(true)}>Modifier</button>{' '}
-        <button onClick={handleDelete}>Supprimer</button>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <Link to={`/admin/etablissements/${e.id}`} className="btn btn-sm">
+            Stats
+          </Link>
+          <button className="btn btn-sm" onClick={() => setEditing(true)}>
+            Modifier
+          </button>
+          <button className="btn btn-sm btn-danger" onClick={handleDelete}>
+            Supprimer
+          </button>
+        </div>
       </td>
     </tr>
   );
@@ -185,7 +214,7 @@ function AdminDashboard() {
       loadEtablissements();
     } else {
       const data = await res.json();
-      setError(data.error || "Erreur lors de la création");
+      setError(data.error || 'Erreur lors de la création');
     }
   }
 
@@ -194,65 +223,88 @@ function AdminDashboard() {
     navigate('/admin/login');
   }
 
-  if (loading) return <p>Chargement...</p>;
+  if (loading) {
+    return (
+      <div className="container">
+        <p className="subtitle">Chargement...</p>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ maxWidth: 900, margin: '40px auto', fontFamily: 'sans-serif' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1>Établissements</h1>
-        <button onClick={handleLogout}>Se déconnecter</button>
+    <div className="container" style={{ maxWidth: 1100 }}>
+      <div className="topbar">
+        <div>
+          <div className="logo-mark" style={{ fontSize: 16 }}>
+            avis<span>plaque</span>
+          </div>
+          <h1>Établissements</h1>
+        </div>
+        <button className="btn" onClick={handleLogout}>
+          Se déconnecter
+        </button>
       </div>
 
-      <form onSubmit={handleSubmit} style={{ marginBottom: 24 }}>
-        <h2>Ajouter un établissement</h2>
-        <input
-          placeholder="Nom du commerce"
-          value={nom}
-          onChange={(e) => setNom(e.target.value)}
-          required
-          style={{ width: '100%', padding: 8, marginBottom: 8 }}
-        />
-        <input
-          placeholder="Lien fiche avis Google"
-          value={lienGoogleAvis}
-          onChange={(e) => setLienGoogleAvis(e.target.value)}
-          required
-          style={{ width: '100%', padding: 8, marginBottom: 8 }}
-        />
-        <input
-          placeholder="ID personnalisé (optionnel, pour une plaque déjà imprimée 1-50)"
-          value={idPersonnalise}
-          onChange={(e) => setIdPersonnalise(e.target.value)}
-          style={{ width: '100%', padding: 8, marginBottom: 8 }}
-        />
-        <input
-          type="email"
-          placeholder="Email du commerçant (optionnel, envoie une invitation automatiquement)"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          style={{ width: '100%', padding: 8, marginBottom: 8 }}
-        />
-        <button type="submit" style={{ padding: 8 }}>Ajouter</button>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-      </form>
+      <div className="card" style={{ marginBottom: 24 }}>
+        <p className="section-title">Ajouter un établissement</p>
+        <form onSubmit={handleSubmit}>
+          <div className="field-row" style={{ marginBottom: 4 }}>
+            <input
+              className="input"
+              placeholder="Nom du commerce"
+              value={nom}
+              onChange={(e) => setNom(e.target.value)}
+              required
+            />
+            <input
+              className="input"
+              placeholder="Lien fiche avis Google"
+              value={lienGoogleAvis}
+              onChange={(e) => setLienGoogleAvis(e.target.value)}
+              required
+            />
+          </div>
+          <div className="field-row" style={{ marginBottom: 12 }}>
+            <input
+              className="input"
+              placeholder="ID personnalisé (optionnel, plaque 1-50)"
+              value={idPersonnalise}
+              onChange={(e) => setIdPersonnalise(e.target.value)}
+            />
+            <input
+              className="input"
+              type="email"
+              placeholder="Email du commerçant (envoie une invitation)"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <button type="submit" className="btn btn-primary">
+            Ajouter
+          </button>
+          {error && <p className="error-text">{error}</p>}
+        </form>
+      </div>
 
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead>
-          <tr>
-            <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>ID</th>
-            <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>Nom</th>
-            <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>Lien avis Google</th>
-            <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>Compte commerçant</th>
-            <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>Créé le</th>
-            <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}></th>
-          </tr>
-        </thead>
-        <tbody>
-          {etablissements.map((e) => (
-            <EtablissementRow key={e.id} e={e} onChanged={loadEtablissements} />
-          ))}
-        </tbody>
-      </table>
+      <div className="table-wrap">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nom</th>
+              <th>Avis Google</th>
+              <th>Compte commerçant</th>
+              <th>Créé le</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {etablissements.map((e) => (
+              <EtablissementRow key={e.id} e={e} onChanged={loadEtablissements} />
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

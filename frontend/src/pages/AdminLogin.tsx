@@ -25,22 +25,31 @@ function AdminLogin() {
   }
 
   return (
-    <div style={{ maxWidth: 320, margin: '80px auto', fontFamily: 'sans-serif' }}>
-      <h1>Admin</h1>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="password"
-          placeholder="Mot de passe"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={{ width: '100%', padding: 8, marginBottom: 8 }}
-          autoFocus
-        />
-        <button type="submit" style={{ width: '100%', padding: 8 }}>
-          Se connecter
-        </button>
-      </form>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+    <div className="center-page">
+      <div className="container-narrow" style={{ width: '100%' }}>
+        <div className="card">
+          <div className="logo-mark">
+            avis<span>plaque</span>
+          </div>
+          <p className="subtitle" style={{ marginBottom: 20 }}>
+            Back-office administrateur
+          </p>
+          <form onSubmit={handleSubmit}>
+            <input
+              className="input"
+              type="password"
+              placeholder="Mot de passe"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoFocus
+            />
+            <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
+              Se connecter
+            </button>
+          </form>
+          {error && <p className="error-text">{error}</p>}
+        </div>
+      </div>
     </div>
   );
 }

@@ -16,9 +16,9 @@ interface Stats {
 
 function StatTile({ label, value }: { label: string; value: number }) {
   return (
-    <div style={{ border: '1px solid #ddd', borderRadius: 8, padding: 16, flex: 1 }}>
-      <div style={{ fontSize: 28, fontWeight: 'bold' }}>{value}</div>
-      <div style={{ color: '#666' }}>{label}</div>
+    <div className="stat-tile">
+      <div className="value">{value}</div>
+      <div className="label">{label}</div>
     </div>
   );
 }
@@ -47,47 +47,65 @@ function ObjectifSection({
 
   if (objectifMensuel === null && !editing) {
     return (
-      <div style={{ marginBottom: 24 }}>
-        <button onClick={() => setEditing(true)}>Définir un objectif mensuel</button>
+      <div className="card">
+        <p className="subtitle" style={{ marginBottom: 12 }}>
+          Fixez-vous un objectif de scans pour ce mois-ci et suivez votre progression.
+        </p>
+        <button className="btn btn-primary" onClick={() => setEditing(true)}>
+          Définir un objectif mensuel
+        </button>
       </div>
     );
   }
 
   if (editing) {
     return (
-      <div style={{ marginBottom: 24 }}>
-        <input
-          type="number"
-          min={0}
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder="Nombre de scans visés ce mois-ci"
-          style={{ padding: 8, marginRight: 8 }}
-        />
-        <button onClick={handleSave}>Enregistrer</button>{' '}
-        <button onClick={() => setEditing(false)}>Annuler</button>
+      <div className="card">
+        <p className="section-title" style={{ marginBottom: 8 }}>Objectif mensuel</p>
+        <div className="field-row">
+          <input
+            className="input"
+            type="number"
+            min={0}
+            value={value}
+            onChange={(ev) => setValue(ev.target.value)}
+            placeholder="Nombre de scans visés ce mois-ci"
+            autoFocus
+          />
+          <button className="btn btn-primary" onClick={handleSave}>
+            Enregistrer
+          </button>
+          <button className="btn" onClick={() => setEditing(false)}>
+            Annuler
+          </button>
+        </div>
       </div>
     );
   }
 
   const percent = Math.min(100, Math.round((thisMonth / (objectifMensuel || 1)) * 100));
+  const complete = percent >= 100;
 
   return (
-    <div style={{ marginBottom: 24 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-        <span>
-          Objectif du mois : {thisMonth} / {objectifMensuel} scans
-        </span>
-        <button onClick={() => setEditing(true)}>Modifier</button>
+    <div className="card">
+      <div className="topbar" style={{ marginBottom: 10 }}>
+        <p className="section-title" style={{ margin: 0 }}>
+          Objectif du mois
+        </p>
+        <button className="btn-link" onClick={() => setEditing(true)}>
+          Modifier
+        </button>
       </div>
-      <div style={{ background: '#eee', borderRadius: 8, height: 16, overflow: 'hidden' }}>
-        <div
-          style={{
-            width: `${percent}%`,
-            background: percent >= 100 ? '#16a34a' : '#4f46e5',
-            height: '100%',
-          }}
-        />
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, alignItems: 'baseline' }}>
+        <span style={{ fontSize: 15 }}>
+          <strong>{thisMonth}</strong> / {objectifMensuel} scans
+        </span>
+        <span style={{ fontSize: 13, color: complete ? 'var(--success)' : 'var(--text-secondary)', fontWeight: 600 }}>
+          {complete ? 'Objectif atteint 🎉' : `${percent}%`}
+        </span>
+      </div>
+      <div className="meter">
+        <div className={`meter-fill${complete ? ' complete' : ''}`} style={{ width: `${percent}%` }} />
       </div>
     </div>
   );
@@ -117,40 +135,60 @@ function MerchantDashboard() {
     navigate('/login');
   }
 
-  if (!stats) return <p>Chargement...</p>;
+  if (!stats) {
+    return (
+      <div className="container">
+        <p className="subtitle">Chargement...</p>
+      </div>
+    );
+  }
 
   const isInactive = stats.joursDepuisDernierScan === null || stats.joursDepuisDernierScan >= 8;
 
   return (
-    <div style={{ maxWidth: 760, margin: '40px auto', fontFamily: 'sans-serif' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1>Mes statistiques</h1>
-        <button onClick={handleLogout}>Se déconnecter</button>
+    <div className="container">
+      <div className="topbar">
+        <div>
+          <div className="logo-mark" style={{ fontSize: 16 }}>
+            avis<span>plaque</span>
+          </div>
+          <h1>Mes statistiques</h1>
+        </div>
+        <button className="btn" onClick={handleLogout}>
+          Se déconnecter
+        </button>
       </div>
 
       {isInactive && (
-        <div style={{ background: '#fef3c7', border: '1px solid #f59e0b', borderRadius: 8, padding: 12, marginBottom: 24 }}>
-          {stats.joursDepuisDernierScan === null
-            ? "Aucun scan enregistré pour le moment — vérifiez que votre plaque est bien visible et accessible"
-            : `Aucun scan enregistré depuis ${stats.joursDepuisDernierScan} jours — vérifiez que votre plaque est bien visible et accessible`}
+        <div className="alert">
+          <span>⚠️</span>
+          <span>
+            {stats.joursDepuisDernierScan === null
+              ? 'Aucun scan enregistré pour le moment — vérifiez que votre plaque est bien visible et accessible.'
+              : `Aucun scan enregistré depuis ${stats.joursDepuisDernierScan} jours — vérifiez que votre plaque est bien visible et accessible.`}
+          </span>
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
+      <div className="stat-grid">
         <StatTile label="Aujourd'hui" value={stats.today} />
         <StatTile label="Cette semaine" value={stats.last7} />
         <StatTile label="Ce mois-ci" value={stats.last30} />
         <StatTile label="Total" value={stats.total} />
       </div>
 
-      <ObjectifSection
-        thisMonth={stats.thisMonth}
-        objectifMensuel={stats.objectifMensuel}
-        onChanged={loadStats}
-      />
+      <div style={{ marginBottom: 16 }}>
+        <ObjectifSection
+          thisMonth={stats.thisMonth}
+          objectifMensuel={stats.objectifMensuel}
+          onChanged={loadStats}
+        />
+      </div>
 
-      <h2>Scans par jour (30 derniers jours)</h2>
-      <BarChart data={stats.daily} />
+      <div className="card">
+        <p className="section-title">Scans par jour (30 derniers jours)</p>
+        <BarChart data={stats.daily} />
+      </div>
     </div>
   );
 }
