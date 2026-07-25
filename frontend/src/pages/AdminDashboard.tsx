@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
 
 interface Etablissement {
@@ -7,6 +7,8 @@ interface Etablissement {
   nom: string;
   lien_google_avis: string;
   email: string | null;
+  a_un_compte: boolean;
+  invitation_en_attente: boolean;
   date_creation: string;
 }
 
@@ -16,7 +18,6 @@ function AdminDashboard() {
   const [lienGoogleAvis, setLienGoogleAvis] = useState('');
   const [idPersonnalise, setIdPersonnalise] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -48,7 +49,6 @@ function AdminDashboard() {
         lien_google_avis: lienGoogleAvis,
         id: idPersonnalise || undefined,
         email: email || undefined,
-        password: password || undefined,
       }),
     });
 
@@ -57,11 +57,27 @@ function AdminDashboard() {
       setLienGoogleAvis('');
       setIdPersonnalise('');
       setEmail('');
-      setPassword('');
       loadEtablissements();
     } else {
       const data = await res.json();
       setError(data.error || "Erreur lors de la création");
+    }
+  }
+
+  async function handleInvite(id: string, currentEmail: string | null) {
+    const targetEmail = currentEmail || window.prompt("Email du commerçant pour l'inviter :");
+    if (!targetEmail) return;
+
+    const res = await apiFetch(`/admin/etablissements/${id}/invite`, {
+      method: 'POST',
+      body: JSON.stringify({ email: targetEmail }),
+    });
+
+    if (res.ok) {
+      loadEtablissements();
+    } else {
+      const data = await res.json();
+      alert(data.error || "Erreur lors de l'envoi de l'invitation");
     }
   }
 
@@ -73,7 +89,7 @@ function AdminDashboard() {
   if (loading) return <p>Chargement...</p>;
 
   return (
-    <div style={{ maxWidth: 700, margin: '40px auto', fontFamily: 'sans-serif' }}>
+    <div style={{ maxWidth: 900, margin: '40px auto', fontFamily: 'sans-serif' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1>Établissements</h1>
         <button onClick={handleLogout}>Se déconnecter</button>
@@ -103,16 +119,9 @@ function AdminDashboard() {
         />
         <input
           type="email"
-          placeholder="Email du commerçant (optionnel, pour lui créer un accès dashboard)"
+          placeholder="Email du commerçant (optionnel, envoie une invitation automatiquement)"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          style={{ width: '100%', padding: 8, marginBottom: 8 }}
-        />
-        <input
-          type="password"
-          placeholder="Mot de passe du commerçant (optionnel)"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
           style={{ width: '100%', padding: 8, marginBottom: 8 }}
         />
         <button type="submit" style={{ padding: 8 }}>Ajouter</button>
@@ -125,8 +134,9 @@ function AdminDashboard() {
             <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>ID</th>
             <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>Nom</th>
             <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>Lien avis Google</th>
-            <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>Email compte</th>
+            <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>Compte commerçant</th>
             <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>Créé le</th>
+            <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}></th>
           </tr>
         </thead>
         <tbody>
@@ -139,8 +149,23 @@ function AdminDashboard() {
                   {e.lien_google_avis}
                 </a>
               </td>
-              <td>{e.email || '—'}</td>
+              <td>
+                {e.a_un_compte ? (
+                  <span>Actif ({e.email})</span>
+                ) : (
+                  <>
+                    <span>{e.invitation_en_attente ? 'Invitation envoyée' : 'Aucun accès'}</span>
+                    {' '}
+                    <button onClick={() => handleInvite(e.id, e.email)}>
+                      {e.invitation_en_attente ? 'Renvoyer' : 'Inviter'}
+                    </button>
+                  </>
+                )}
+              </td>
               <td>{new Date(e.date_creation).toLocaleString('fr-FR')}</td>
+              <td>
+                <Link to={`/admin/etablissements/${e.id}`}>Voir stats</Link>
+              </td>
             </tr>
           ))}
         </tbody>
