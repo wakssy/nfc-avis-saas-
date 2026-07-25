@@ -9,10 +9,7 @@ async function getAvisHistorique(etablissementId) {
   );
 
   const map = new Map(
-    rows.map((r) => [
-      r.date.toISOString().slice(0, 10),
-      { nombreAvis: r.nombre_avis, noteMoyenne: Number(r.note_moyenne) },
-    ])
+    rows.map((r) => [r.date, { nombreAvis: r.nombre_avis, noteMoyenne: Number(r.note_moyenne) }])
   );
 
   const daily = [];

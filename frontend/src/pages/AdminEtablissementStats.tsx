@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
 import BarChart from '../components/BarChart';
 import LineChart from '../components/LineChart';
+import ConversionEstimate from '../components/ConversionEstimate';
 
 interface Stats {
   total: number;
@@ -134,6 +135,8 @@ function AdminEtablissementStats() {
           <LineChart data={avis.daily.map((d) => ({ date: d.date, value: d.nombreAvis }))} />
         </div>
       )}
+
+      {avis && <ConversionEstimate scans30={stats.last30} avisDaily={avis.daily} />}
     </div>
   );
 }
