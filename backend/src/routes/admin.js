@@ -5,6 +5,7 @@ const generateId = require('../lib/generateId');
 const { generateInvitationToken } = require('../lib/token');
 const { sendInvitationEmail } = require('../lib/email');
 const { getStatsForEtablissement } = require('../lib/stats');
+const { getAvisHistorique } = require('../lib/avisStats');
 const { resolvePlaceId } = require('../lib/googlePlaces');
 
 const router = express.Router();
@@ -66,6 +67,16 @@ router.get('/etablissements/:id/stats', requireAdmin, async (req, res) => {
   try {
     const stats = await getStatsForEtablissement(req.params.id);
     res.json(stats);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+router.get('/etablissements/:id/avis-historique', requireAdmin, async (req, res) => {
+  try {
+    const data = await getAvisHistorique(req.params.id);
+    res.json(data);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Erreur serveur' });

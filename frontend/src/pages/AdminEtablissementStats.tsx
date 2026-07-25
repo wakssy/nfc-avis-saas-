@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
 import BarChart from '../components/BarChart';
+import LineChart from '../components/LineChart';
 
 interface Stats {
   total: number;
@@ -12,6 +13,12 @@ interface Stats {
   objectifMensuel: number | null;
   joursDepuisDernierScan: number | null;
   daily: { date: string; count: number }[];
+}
+
+interface AvisHistorique {
+  daily: { date: string; nombreAvis: number | null; noteMoyenne: number | null }[];
+  nombreAvisActuel: number | null;
+  noteMoyenneActuelle: number | null;
 }
 
 function StatTile({ label, value }: { label: string; value: number }) {
@@ -26,6 +33,7 @@ function StatTile({ label, value }: { label: string; value: number }) {
 function AdminEtablissementStats() {
   const { id } = useParams();
   const [stats, setStats] = useState<Stats | null>(null);
+  const [avis, setAvis] = useState<AvisHistorique | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -38,7 +46,12 @@ function AdminEtablissementStats() {
       const data = await res.json();
       setStats(data);
     }
+    async function loadAvis() {
+      const res = await apiFetch(`/admin/etablissements/${id}/avis-historique`);
+      if (res.ok) setAvis(await res.json());
+    }
     loadStats();
+    loadAvis();
   }, [id, navigate]);
 
   if (!stats) {
@@ -100,10 +113,27 @@ function AdminEtablissementStats() {
         </div>
       )}
 
-      <div className="card">
+      <div className="card" style={{ marginBottom: 16 }}>
         <p className="section-title">Scans par jour (30 derniers jours)</p>
         <BarChart data={stats.daily} />
       </div>
+
+      {avis && (
+        <div className="card">
+          <div className="topbar" style={{ marginBottom: 4 }}>
+            <p className="section-title" style={{ margin: 0 }}>
+              Évolution des avis Google (30 derniers jours)
+            </p>
+            {avis.nombreAvisActuel !== null && (
+              <span style={{ fontSize: 14, color: 'var(--text-secondary)' }}>
+                <strong style={{ color: 'var(--text-primary)' }}>{avis.nombreAvisActuel}</strong> avis · note{' '}
+                <strong style={{ color: 'var(--text-primary)' }}>{avis.noteMoyenneActuelle}</strong>/5
+              </span>
+            )}
+          </div>
+          <LineChart data={avis.daily.map((d) => ({ date: d.date, value: d.nombreAvis }))} />
+        </div>
+      )}
     </div>
   );
 }
