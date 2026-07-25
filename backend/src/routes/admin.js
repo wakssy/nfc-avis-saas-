@@ -52,7 +52,7 @@ router.get('/me', (req, res) => {
 
 router.get('/etablissements', requireAdmin, async (req, res) => {
   const result = await pool.query(
-    `SELECT id, nom, lien_google_avis, email,
+    `SELECT id, nom, lien_google_avis, email, objectif_mensuel,
             (password_hash IS NOT NULL) AS a_un_compte,
             (invitation_token IS NOT NULL AND invitation_expires_at > now()) AS invitation_en_attente,
             date_creation
@@ -98,6 +98,65 @@ router.post('/etablissements', requireAdmin, async (req, res) => {
     }
     console.error(err);
     res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+router.put('/etablissements/:id', requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { nom, lien_google_avis, email, objectif_mensuel } = req.body;
+
+  if (!nom || !lien_google_avis) {
+    return res.status(400).json({ error: 'nom et lien_google_avis sont requis' });
+  }
+
+  const objectifValue =
+    objectif_mensuel === undefined || objectif_mensuel === null || objectif_mensuel === ''
+      ? null
+      : Number(objectif_mensuel);
+
+  try {
+    const result = await pool.query(
+      `UPDATE etablissements SET nom = $1, lien_google_avis = $2, email = $3, objectif_mensuel = $4
+       WHERE id = $5
+       RETURNING id, nom, lien_google_avis, email, objectif_mensuel, date_creation`,
+      [nom, lien_google_avis, email || null, objectifValue, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Établissement introuvable' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    if (err.code === '23505') {
+      return res.status(409).json({ error: 'Cet email est déjà utilisé par un autre établissement' });
+    }
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+router.delete('/etablissements/:id', requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+    await client.query('DELETE FROM scans WHERE etablissement_id = $1', [id]);
+    const result = await client.query('DELETE FROM etablissements WHERE id = $1 RETURNING id', [id]);
+    await client.query('COMMIT');
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Établissement introuvable' });
+    }
+
+    res.json({ status: 'ok' });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  } finally {
+    client.release();
   }
 });
 

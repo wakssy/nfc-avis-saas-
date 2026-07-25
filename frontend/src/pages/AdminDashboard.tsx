@@ -7,9 +7,134 @@ interface Etablissement {
   nom: string;
   lien_google_avis: string;
   email: string | null;
+  objectif_mensuel: number | null;
   a_un_compte: boolean;
   invitation_en_attente: boolean;
   date_creation: string;
+}
+
+function EtablissementRow({
+  e,
+  onChanged,
+}: {
+  e: Etablissement;
+  onChanged: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [nom, setNom] = useState(e.nom);
+  const [lien, setLien] = useState(e.lien_google_avis);
+  const [email, setEmail] = useState(e.email || '');
+  const [objectif, setObjectif] = useState(String(e.objectif_mensuel ?? ''));
+  const [error, setError] = useState('');
+
+  async function handleInvite() {
+    const targetEmail = e.email || window.prompt("Email du commerçant pour l'inviter :");
+    if (!targetEmail) return;
+
+    const res = await apiFetch(`/admin/etablissements/${e.id}/invite`, {
+      method: 'POST',
+      body: JSON.stringify({ email: targetEmail }),
+    });
+
+    if (res.ok) {
+      onChanged();
+    } else {
+      const data = await res.json();
+      alert(data.error || "Erreur lors de l'envoi de l'invitation");
+    }
+  }
+
+  async function handleSave() {
+    setError('');
+    const res = await apiFetch(`/admin/etablissements/${e.id}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        nom,
+        lien_google_avis: lien,
+        email: email || undefined,
+        objectif_mensuel: objectif === '' ? null : Number(objectif),
+      }),
+    });
+
+    if (res.ok) {
+      setEditing(false);
+      onChanged();
+    } else {
+      const data = await res.json();
+      setError(data.error || 'Erreur lors de la modification');
+    }
+  }
+
+  async function handleDelete() {
+    if (!window.confirm(`Supprimer définitivement "${e.nom}" ? Cette action est irréversible.`)) {
+      return;
+    }
+    const res = await apiFetch(`/admin/etablissements/${e.id}`, { method: 'DELETE' });
+    if (res.ok) {
+      onChanged();
+    } else {
+      const data = await res.json();
+      alert(data.error || 'Erreur lors de la suppression');
+    }
+  }
+
+  if (editing) {
+    return (
+      <tr>
+        <td>{e.id}</td>
+        <td colSpan={4}>
+          <input value={nom} onChange={(ev) => setNom(ev.target.value)} style={{ marginRight: 4 }} />
+          <input value={lien} onChange={(ev) => setLien(ev.target.value)} style={{ marginRight: 4, width: 220 }} />
+          <input
+            type="email"
+            value={email}
+            onChange={(ev) => setEmail(ev.target.value)}
+            placeholder="email"
+            style={{ marginRight: 4 }}
+          />
+          <input
+            type="number"
+            min={0}
+            value={objectif}
+            onChange={(ev) => setObjectif(ev.target.value)}
+            placeholder="objectif mensuel"
+            style={{ marginRight: 4, width: 130 }}
+          />
+          <button onClick={handleSave}>Enregistrer</button>{' '}
+          <button onClick={() => setEditing(false)}>Annuler</button>
+          {error && <p style={{ color: 'red' }}>{error}</p>}
+        </td>
+      </tr>
+    );
+  }
+
+  return (
+    <tr>
+      <td>{e.id}</td>
+      <td>{e.nom}</td>
+      <td>
+        <a href={e.lien_google_avis} target="_blank" rel="noreferrer">
+          {e.lien_google_avis}
+        </a>
+      </td>
+      <td>
+        {e.a_un_compte ? (
+          <span>Actif ({e.email})</span>
+        ) : (
+          <>
+            <span>{e.invitation_en_attente ? 'Invitation envoyée' : 'Aucun accès'}</span>{' '}
+            <button onClick={handleInvite}>{e.invitation_en_attente ? 'Renvoyer' : 'Inviter'}</button>
+          </>
+        )}
+      </td>
+      <td>{new Date(e.date_creation).toLocaleString('fr-FR')}</td>
+      <td>
+        <Link to={`/admin/etablissements/${e.id}`}>Voir stats</Link>{' '}
+        <button onClick={() => setEditing(true)}>Modifier</button>{' '}
+        <button onClick={handleDelete}>Supprimer</button>
+      </td>
+    </tr>
+  );
 }
 
 function AdminDashboard() {
@@ -61,23 +186,6 @@ function AdminDashboard() {
     } else {
       const data = await res.json();
       setError(data.error || "Erreur lors de la création");
-    }
-  }
-
-  async function handleInvite(id: string, currentEmail: string | null) {
-    const targetEmail = currentEmail || window.prompt("Email du commerçant pour l'inviter :");
-    if (!targetEmail) return;
-
-    const res = await apiFetch(`/admin/etablissements/${id}/invite`, {
-      method: 'POST',
-      body: JSON.stringify({ email: targetEmail }),
-    });
-
-    if (res.ok) {
-      loadEtablissements();
-    } else {
-      const data = await res.json();
-      alert(data.error || "Erreur lors de l'envoi de l'invitation");
     }
   }
 
@@ -141,32 +249,7 @@ function AdminDashboard() {
         </thead>
         <tbody>
           {etablissements.map((e) => (
-            <tr key={e.id}>
-              <td>{e.id}</td>
-              <td>{e.nom}</td>
-              <td>
-                <a href={e.lien_google_avis} target="_blank" rel="noreferrer">
-                  {e.lien_google_avis}
-                </a>
-              </td>
-              <td>
-                {e.a_un_compte ? (
-                  <span>Actif ({e.email})</span>
-                ) : (
-                  <>
-                    <span>{e.invitation_en_attente ? 'Invitation envoyée' : 'Aucun accès'}</span>
-                    {' '}
-                    <button onClick={() => handleInvite(e.id, e.email)}>
-                      {e.invitation_en_attente ? 'Renvoyer' : 'Inviter'}
-                    </button>
-                  </>
-                )}
-              </td>
-              <td>{new Date(e.date_creation).toLocaleString('fr-FR')}</td>
-              <td>
-                <Link to={`/admin/etablissements/${e.id}`}>Voir stats</Link>
-              </td>
-            </tr>
+            <EtablissementRow key={e.id} e={e} onChanged={loadEtablissements} />
           ))}
         </tbody>
       </table>

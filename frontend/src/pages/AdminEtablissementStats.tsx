@@ -5,6 +5,7 @@ import BarChart from '../components/BarChart';
 
 interface Stats {
   total: number;
+  today: number;
   last7: number;
   last30: number;
   daily: { date: string; count: number }[];
@@ -45,9 +46,10 @@ function AdminEtablissementStats() {
       <h1>Stats de {id}</h1>
 
       <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
-        <StatTile label="Scans au total" value={stats.total} />
-        <StatTile label="7 derniers jours" value={stats.last7} />
-        <StatTile label="30 derniers jours" value={stats.last30} />
+        <StatTile label="Aujourd'hui" value={stats.today} />
+        <StatTile label="Cette semaine" value={stats.last7} />
+        <StatTile label="Ce mois-ci" value={stats.last30} />
+        <StatTile label="Total" value={stats.total} />
       </div>
 
       <h2>Scans par jour (30 derniers jours)</h2>

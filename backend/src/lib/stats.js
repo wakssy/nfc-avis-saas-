@@ -1,23 +1,33 @@
 const pool = require('../db');
 
 async function getStatsForEtablissement(id) {
-  const [totalResult, last7Result, last30Result, dailyResult] = await Promise.all([
-    pool.query('SELECT COUNT(*)::int AS count FROM scans WHERE etablissement_id = $1', [id]),
-    pool.query(
-      "SELECT COUNT(*)::int AS count FROM scans WHERE etablissement_id = $1 AND date_scan >= now() - interval '7 days'",
-      [id]
-    ),
-    pool.query(
-      "SELECT COUNT(*)::int AS count FROM scans WHERE etablissement_id = $1 AND date_scan >= now() - interval '30 days'",
-      [id]
-    ),
-    pool.query(
-      `SELECT date_scan
-       FROM scans
-       WHERE etablissement_id = $1 AND date_scan >= now() - interval '30 days'`,
-      [id]
-    ),
-  ]);
+  const now = new Date();
+  const firstOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+
+  const [totalResult, last7Result, last30Result, thisMonthResult, dailyResult, lastScanResult, etablissementResult] =
+    await Promise.all([
+      pool.query('SELECT COUNT(*)::int AS count FROM scans WHERE etablissement_id = $1', [id]),
+      pool.query(
+        "SELECT COUNT(*)::int AS count FROM scans WHERE etablissement_id = $1 AND date_scan >= now() - interval '7 days'",
+        [id]
+      ),
+      pool.query(
+        "SELECT COUNT(*)::int AS count FROM scans WHERE etablissement_id = $1 AND date_scan >= now() - interval '30 days'",
+        [id]
+      ),
+      pool.query(
+        'SELECT COUNT(*)::int AS count FROM scans WHERE etablissement_id = $1 AND date_scan >= $2',
+        [id, firstOfMonth]
+      ),
+      pool.query(
+        `SELECT date_scan
+         FROM scans
+         WHERE etablissement_id = $1 AND date_scan >= now() - interval '30 days'`,
+        [id]
+      ),
+      pool.query('SELECT MAX(date_scan) AS derniere_date FROM scans WHERE etablissement_id = $1', [id]),
+      pool.query('SELECT objectif_mensuel FROM etablissements WHERE id = $1', [id]),
+    ]);
 
   const dailyMap = new Map();
   for (const row of dailyResult.rows) {
@@ -33,10 +43,19 @@ async function getStatsForEtablissement(id) {
     daily.push({ date: key, count: dailyMap.get(key) || 0 });
   }
 
+  const derniereDate = lastScanResult.rows[0].derniere_date;
+  const joursDepuisDernierScan = derniereDate
+    ? Math.floor((Date.now() - new Date(derniereDate).getTime()) / (24 * 60 * 60 * 1000))
+    : null;
+
   return {
     total: totalResult.rows[0].count,
+    today: daily[daily.length - 1].count,
     last7: last7Result.rows[0].count,
     last30: last30Result.rows[0].count,
+    thisMonth: thisMonthResult.rows[0].count,
+    objectifMensuel: etablissementResult.rows[0]?.objectif_mensuel ?? null,
+    joursDepuisDernierScan,
     daily,
   };
 }

@@ -9,6 +9,7 @@ ALTER TABLE etablissements ADD COLUMN IF NOT EXISTS email TEXT UNIQUE;
 ALTER TABLE etablissements ADD COLUMN IF NOT EXISTS password_hash TEXT;
 ALTER TABLE etablissements ADD COLUMN IF NOT EXISTS invitation_token TEXT UNIQUE;
 ALTER TABLE etablissements ADD COLUMN IF NOT EXISTS invitation_expires_at TIMESTAMPTZ;
+ALTER TABLE etablissements ADD COLUMN IF NOT EXISTS objectif_mensuel INTEGER;
 
 CREATE TABLE IF NOT EXISTS scans (
   id SERIAL PRIMARY KEY,
