@@ -5,6 +5,7 @@ const generateId = require('../lib/generateId');
 const { generateInvitationToken } = require('../lib/token');
 const { sendInvitationEmail } = require('../lib/email');
 const { getStatsForEtablissement } = require('../lib/stats');
+const { resolvePlaceId } = require('../lib/googlePlaces');
 
 const router = express.Router();
 
@@ -52,7 +53,7 @@ router.get('/me', (req, res) => {
 
 router.get('/etablissements', requireAdmin, async (req, res) => {
   const result = await pool.query(
-    `SELECT id, nom, lien_google_avis, email, objectif_mensuel,
+    `SELECT id, nom, lien_google_avis, email, objectif_mensuel, place_id,
             (password_hash IS NOT NULL) AS a_un_compte,
             (invitation_token IS NOT NULL AND invitation_expires_at > now()) AS invitation_en_attente,
             date_creation
@@ -91,6 +92,16 @@ router.post('/etablissements', requireAdmin, async (req, res) => {
       await trySendInvitationEmail(email, nom, invitationUrl);
     }
 
+    try {
+      const placeId = await resolvePlaceId(lien_google_avis, nom);
+      if (placeId) {
+        await pool.query('UPDATE etablissements SET place_id = $1 WHERE id = $2', [placeId, finalId]);
+        result.rows[0].place_id = placeId;
+      }
+    } catch (err) {
+      console.error('Échec de la résolution automatique du place_id:', err);
+    }
+
     res.status(201).json(result.rows[0]);
   } catch (err) {
     if (err.code === '23505') {
@@ -103,7 +114,7 @@ router.post('/etablissements', requireAdmin, async (req, res) => {
 
 router.put('/etablissements/:id', requireAdmin, async (req, res) => {
   const { id } = req.params;
-  const { nom, lien_google_avis, email, objectif_mensuel } = req.body;
+  const { nom, lien_google_avis, email, objectif_mensuel, place_id } = req.body;
 
   if (!nom || !lien_google_avis) {
     return res.status(400).json({ error: 'nom et lien_google_avis sont requis' });
@@ -114,12 +125,14 @@ router.put('/etablissements/:id', requireAdmin, async (req, res) => {
       ? null
       : Number(objectif_mensuel);
 
+  const placeIdValue = place_id === undefined || place_id === '' ? null : place_id;
+
   try {
     const result = await pool.query(
-      `UPDATE etablissements SET nom = $1, lien_google_avis = $2, email = $3, objectif_mensuel = $4
-       WHERE id = $5
-       RETURNING id, nom, lien_google_avis, email, objectif_mensuel, date_creation`,
-      [nom, lien_google_avis, email || null, objectifValue, id]
+      `UPDATE etablissements SET nom = $1, lien_google_avis = $2, email = $3, objectif_mensuel = $4, place_id = $5
+       WHERE id = $6
+       RETURNING id, nom, lien_google_avis, email, objectif_mensuel, place_id, date_creation`,
+      [nom, lien_google_avis, email || null, objectifValue, placeIdValue, id]
     );
 
     if (result.rows.length === 0) {
@@ -143,6 +156,7 @@ router.delete('/etablissements/:id', requireAdmin, async (req, res) => {
   try {
     await client.query('BEGIN');
     await client.query('DELETE FROM scans WHERE etablissement_id = $1', [id]);
+    await client.query('DELETE FROM avis_historique WHERE etablissement_id = $1', [id]);
     const result = await client.query('DELETE FROM etablissements WHERE id = $1 RETURNING id', [id]);
     await client.query('COMMIT');
 

@@ -8,6 +8,7 @@ interface Etablissement {
   lien_google_avis: string;
   email: string | null;
   objectif_mensuel: number | null;
+  place_id: string | null;
   a_un_compte: boolean;
   invitation_en_attente: boolean;
   date_creation: string;
@@ -25,6 +26,7 @@ function EtablissementRow({
   const [lien, setLien] = useState(e.lien_google_avis);
   const [email, setEmail] = useState(e.email || '');
   const [objectif, setObjectif] = useState(String(e.objectif_mensuel ?? ''));
+  const [placeId, setPlaceId] = useState(e.place_id ?? '');
   const [error, setError] = useState('');
 
   async function handleInvite() {
@@ -53,6 +55,7 @@ function EtablissementRow({
         lien_google_avis: lien,
         email: email || undefined,
         objectif_mensuel: objectif === '' ? null : Number(objectif),
+        place_id: placeId || null,
       }),
     });
 
@@ -82,7 +85,7 @@ function EtablissementRow({
     return (
       <tr>
         <td>{e.id}</td>
-        <td colSpan={5}>
+        <td colSpan={6}>
           <div className="field-row" style={{ marginBottom: 6 }}>
             <input className="input" value={nom} onChange={(ev) => setNom(ev.target.value)} placeholder="Nom" />
             <input
@@ -109,6 +112,14 @@ function EtablissementRow({
               style={{ maxWidth: 130 }}
             />
           </div>
+          <div className="field-row" style={{ marginBottom: 6 }}>
+            <input
+              className="input"
+              value={placeId}
+              onChange={(ev) => setPlaceId(ev.target.value)}
+              placeholder="Place ID Google (avancé, pour les stats d'avis)"
+            />
+          </div>
           <button className="btn btn-primary btn-sm" onClick={handleSave}>
             Enregistrer
           </button>{' '}
@@ -131,6 +142,13 @@ function EtablissementRow({
         <a href={e.lien_google_avis} target="_blank" rel="noreferrer" className="link">
           Voir la fiche
         </a>
+      </td>
+      <td>
+        {e.place_id ? (
+          <span className="badge badge-success">Lié</span>
+        ) : (
+          <span className="badge badge-muted">Non lié</span>
+        )}
       </td>
       <td>
         {e.a_un_compte ? (
@@ -293,6 +311,7 @@ function AdminDashboard() {
               <th>ID</th>
               <th>Nom</th>
               <th>Avis Google</th>
+              <th>Places API</th>
               <th>Compte commerçant</th>
               <th>Créé le</th>
               <th></th>
