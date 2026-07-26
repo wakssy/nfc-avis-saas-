@@ -5,7 +5,7 @@ const { sendWeeklyReport } = require('../src/lib/emailReports');
 
 async function run() {
   const isMonday = new Date().getUTCDay() === 1;
-  if (!isMonday) {
+  if (!isMonday && process.env.FORCE_WEEKLY !== 'true') {
     console.log("Pas lundi (heure UTC) — rapport hebdomadaire non exécuté aujourd'hui.");
     await pool.end();
     return;
