@@ -1,6 +1,7 @@
 const express = require('express');
 const pool = require('../db');
 const { verifyPassword, hashPassword } = require('../lib/password');
+const { getOrCreatePaiementToken } = require('../lib/paiementToken');
 
 const router = express.Router();
 
@@ -61,7 +62,7 @@ router.post('/invitation/:token', async (req, res) => {
   }
 
   const result = await pool.query(
-    'SELECT id, invitation_expires_at FROM etablissements WHERE invitation_token = $1',
+    'SELECT id, invitation_expires_at, abonnement_statut FROM etablissements WHERE invitation_token = $1',
     [req.params.token]
   );
   const etablissement = result.rows[0];
@@ -78,7 +79,10 @@ router.post('/invitation/:token', async (req, res) => {
   );
 
   req.session.etablissementId = etablissement.id;
-  res.json({ status: 'ok' });
+
+  const dejaPaye = etablissement.abonnement_statut === 'actif' || etablissement.abonnement_statut === 'plaque_seule';
+  const paiementToken = dejaPaye ? null : await getOrCreatePaiementToken(etablissement.id);
+  res.json({ status: 'ok', paiementToken });
 });
 
 module.exports = router;

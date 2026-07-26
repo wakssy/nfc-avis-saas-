@@ -35,7 +35,12 @@ function AcceptInvitation() {
     });
 
     if (res.ok) {
-      navigate('/dashboard');
+      const data = await res.json();
+      if (data.paiementToken) {
+        navigate(`/paiement/${data.paiementToken}`);
+      } else {
+        navigate('/dashboard');
+      }
     } else {
       const data = await res.json();
       setError(data.error || 'Erreur');

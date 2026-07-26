@@ -1,18 +1,25 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
 
 function Paiement() {
   const { token } = useParams();
   const [nom, setNom] = useState<string | null>(null);
   const [dejaPaye, setDejaPaye] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
     async function load() {
-      const res = await apiFetch(`/paiement/${token}`);
+      const [res, meRes] = await Promise.all([apiFetch(`/paiement/${token}`), apiFetch('/auth/me')]);
+
+      if (meRes.ok) {
+        const meData = await meRes.json();
+        setLoggedIn(meData.loggedIn);
+      }
+
       if (res.ok) {
         const data = await res.json();
         setNom(data.nom);
@@ -58,14 +65,30 @@ function Paiement() {
           ) : error && !nom ? (
             <p className="error-text">{error}</p>
           ) : dejaPaye ? (
-            <p className="subtitle" style={{ marginTop: 12 }}>
-              Le paiement pour <strong style={{ color: 'var(--text-primary)' }}>{nom}</strong> a déjà été
-              effectué. Si besoin, contacte-nous directement.
-            </p>
+            <>
+              <p className="subtitle" style={{ marginTop: 12, marginBottom: loggedIn ? 20 : 0 }}>
+                Le paiement pour <strong style={{ color: 'var(--text-primary)' }}>{nom}</strong> a déjà été
+                effectué. {!loggedIn && 'Si besoin, contacte-nous directement.'}
+              </p>
+              {loggedIn && (
+                <Link to="/dashboard" className="btn btn-primary" style={{ width: '100%' }}>
+                  Accéder à mon dashboard
+                </Link>
+              )}
+            </>
           ) : (
             <>
               <p className="subtitle" style={{ marginTop: 12, marginBottom: 20 }}>
-                Choisissez votre offre pour <strong style={{ color: 'var(--text-primary)' }}>{nom}</strong>
+                {loggedIn ? (
+                  <>
+                    Dernière étape : choisissez votre offre pour activer{' '}
+                    <strong style={{ color: 'var(--text-primary)' }}>{nom}</strong>
+                  </>
+                ) : (
+                  <>
+                    Choisissez votre offre pour <strong style={{ color: 'var(--text-primary)' }}>{nom}</strong>
+                  </>
+                )}
               </p>
 
               <div className="card" style={{ marginBottom: 12 }}>

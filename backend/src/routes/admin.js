@@ -2,11 +2,11 @@ const express = require('express');
 const pool = require('../db');
 const requireAdmin = require('../middleware/requireAdmin');
 const generateId = require('../lib/generateId');
-const { generateToken } = require('../lib/token');
 const { getStatsForEtablissement } = require('../lib/stats');
 const { getAvisHistorique } = require('../lib/avisStats');
 const { resolvePlaceId } = require('../lib/googlePlaces');
 const { createInvitation, trySendInvitationEmail } = require('../lib/invitation');
+const { getOrCreatePaiementToken } = require('../lib/paiementToken');
 
 const router = express.Router();
 
@@ -191,17 +191,9 @@ router.post('/etablissements/:id/invite', requireAdmin, async (req, res) => {
 });
 
 router.post('/etablissements/:id/lien-paiement', requireAdmin, async (req, res) => {
-  const { id } = req.params;
-
-  const existing = await pool.query('SELECT paiement_token FROM etablissements WHERE id = $1', [id]);
-  if (existing.rows.length === 0) {
-    return res.status(404).json({ error: 'Établissement introuvable' });
-  }
-
-  let token = existing.rows[0].paiement_token;
+  const token = await getOrCreatePaiementToken(req.params.id);
   if (!token) {
-    token = generateToken();
-    await pool.query('UPDATE etablissements SET paiement_token = $1 WHERE id = $2', [token, id]);
+    return res.status(404).json({ error: 'Établissement introuvable' });
   }
 
   res.json({ url: `${process.env.FRONTEND_URL}/paiement/${token}` });
