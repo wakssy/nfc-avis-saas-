@@ -26,17 +26,6 @@ app.use(cors({ origin: true, credentials: true }));
 app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   let event;
 
-  console.log(
-    'DEBUG webhook: length=',
-    req.body.length,
-    'sha256=',
-    require('crypto').createHash('sha256').update(req.body).digest('hex'),
-    'content-type=',
-    req.headers['content-type'],
-    'content-encoding=',
-    req.headers['content-encoding']
-  );
-
   try {
     event = stripe.webhooks.constructEvent(
       req.body,
