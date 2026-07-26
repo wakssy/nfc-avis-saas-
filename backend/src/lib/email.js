@@ -1,14 +1,22 @@
 const { Resend } = require('resend');
 
-async function sendInvitationEmail({ to, nom, invitationUrl }) {
+async function sendEmail({ to, subject, html }) {
   if (!process.env.RESEND_API_KEY) {
-    console.warn(`RESEND_API_KEY absente — email d'invitation non envoyé (lien: ${invitationUrl})`);
+    console.warn(`RESEND_API_KEY absente — email non envoyé (destinataire: ${to}, sujet: ${subject})`);
     return;
   }
 
   const resend = new Resend(process.env.RESEND_API_KEY);
   await resend.emails.send({
     from: process.env.EMAIL_FROM,
+    to,
+    subject,
+    html,
+  });
+}
+
+async function sendInvitationEmail({ to, nom, invitationUrl }) {
+  await sendEmail({
     to,
     subject: 'Créez votre accès au dashboard avisplaque.fr',
     html: `
@@ -20,4 +28,4 @@ async function sendInvitationEmail({ to, nom, invitationUrl }) {
   });
 }
 
-module.exports = { sendInvitationEmail };
+module.exports = { sendEmail, sendInvitationEmail };

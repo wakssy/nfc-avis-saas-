@@ -26,6 +26,25 @@ router.get('/avis-historique', requireMerchant, async (req, res) => {
   }
 });
 
+router.get('/profil', requireMerchant, async (req, res) => {
+  const result = await pool.query('SELECT nom, message_relance FROM etablissements WHERE id = $1', [
+    req.session.etablissementId,
+  ]);
+  res.json({ nom: result.rows[0].nom, messageRelance: result.rows[0].message_relance });
+});
+
+router.put('/message-relance', requireMerchant, async (req, res) => {
+  const { message } = req.body;
+  const value = message && message.trim() ? message.trim() : null;
+
+  await pool.query('UPDATE etablissements SET message_relance = $1 WHERE id = $2', [
+    value,
+    req.session.etablissementId,
+  ]);
+
+  res.json({ status: 'ok', messageRelance: value });
+});
+
 router.put('/objectif', requireMerchant, async (req, res) => {
   const { objectif } = req.body;
   const value = objectif === null ? null : Number(objectif);

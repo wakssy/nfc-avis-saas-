@@ -119,6 +119,70 @@ function ObjectifSection({
   );
 }
 
+function MessageRelanceSection() {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState('');
+  const [defaultMessage, setDefaultMessage] = useState('');
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    async function load() {
+      const res = await apiFetch('/merchant/profil');
+      if (res.ok) {
+        const data = await res.json();
+        const fallback = `Bonjour, voici le récapitulatif de ${data.nom} !`;
+        setDefaultMessage(fallback);
+        setValue(data.messageRelance || fallback);
+      }
+    }
+    load();
+  }, []);
+
+  async function handleSave() {
+    await apiFetch('/merchant/message-relance', {
+      method: 'PUT',
+      body: JSON.stringify({ message: value }),
+    });
+    setEditing(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  return (
+    <div className="card" style={{ marginTop: 16 }}>
+      <div className="topbar" style={{ marginBottom: 8 }}>
+        <p className="section-title" style={{ margin: 0 }}>
+          Message de vos emails récapitulatifs
+        </p>
+        {!editing && (
+          <button className="btn-link" onClick={() => setEditing(true)}>
+            Modifier
+          </button>
+        )}
+      </div>
+      {editing ? (
+        <>
+          <textarea
+            className="input"
+            style={{ minHeight: 80, fontFamily: 'inherit' }}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+          />
+          <button className="btn btn-primary btn-sm" onClick={handleSave}>
+            Enregistrer
+          </button>{' '}
+          <button className="btn btn-sm" onClick={() => setEditing(false)}>
+            Annuler
+          </button>
+        </>
+      ) : (
+        <p className="subtitle">{value || defaultMessage}</p>
+      )}
+      {saved && <p style={{ color: 'var(--success)', fontSize: 13 }}>Enregistré ✓</p>}
+    </div>
+  );
+}
+
 function MerchantDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [avis, setAvis] = useState<AvisHistorique | null>(null);
@@ -225,6 +289,8 @@ function MerchantDashboard() {
       )}
 
       {avis && <ConversionEstimate scans30={stats.last30} avisDaily={avis.daily} />}
+
+      <MessageRelanceSection />
     </div>
   );
 }

@@ -8,7 +8,9 @@
     "start": "node src/index.js",
     "db:migrate": "node db/migrate.js",
     "db:seed": "node db/seed.js",
-    "sync:avis": "node scripts/sync-avis.js"
+    "sync:avis": "node scripts/sync-avis.js",
+    "report:daily": "node scripts/daily-summary.js",
+    "report:weekly": "node scripts/weekly-report.js"
   },
   "keywords": [],
   "author": "",
