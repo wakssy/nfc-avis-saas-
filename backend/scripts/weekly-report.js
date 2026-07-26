@@ -4,6 +4,13 @@ const { getAvisHistorique } = require('../src/lib/avisStats');
 const { sendWeeklyReport } = require('../src/lib/emailReports');
 
 async function run() {
+  const isMonday = new Date().getUTCDay() === 1;
+  if (!isMonday) {
+    console.log("Pas lundi (heure UTC) — rapport hebdomadaire non exécuté aujourd'hui.");
+    await pool.end();
+    return;
+  }
+
   const { rows: etablissements } = await pool.query(
     `SELECT id, nom, email, message_relance FROM etablissements
      WHERE password_hash IS NOT NULL AND email IS NOT NULL`
