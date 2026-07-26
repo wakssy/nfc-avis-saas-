@@ -58,21 +58,23 @@ function LineChart({ data }: { data: DayValue[] }) {
         {last.value}
       </text>
 
-      {data.map(
-        (d, i) =>
-          (i % 5 === 0 || i === data.length - 1) && (
-            <text
-              key={d.date}
-              x={(i / (data.length - 1)) * width}
-              y={height - 4}
-              fontSize="10"
-              textAnchor="middle"
-              fill="var(--text-muted)"
-            >
-              {formatDay(d.date)}
-            </text>
-          )
-      )}
+      {data.map((d, i) => {
+        if (i % 5 !== 0 && i !== data.length - 1) return null;
+        const isFirst = i === 0;
+        const isLast = i === data.length - 1;
+        return (
+          <text
+            key={d.date}
+            x={(i / (data.length - 1)) * width}
+            y={height - 4}
+            fontSize="10"
+            textAnchor={isFirst ? 'start' : isLast ? 'end' : 'middle'}
+            fill="var(--text-muted)"
+          >
+            {formatDay(d.date)}
+          </text>
+        );
+      })}
     </svg>
   );
 }

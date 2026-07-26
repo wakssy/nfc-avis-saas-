@@ -72,7 +72,7 @@ function BarChart({ data }: { data: DayCount[] }) {
                 x={i * slotWidth + slotWidth / 2}
                 y={height - 4}
                 fontSize="10"
-                textAnchor="middle"
+                textAnchor={i === 0 ? 'start' : i === data.length - 1 ? 'end' : 'middle'}
                 fill="var(--text-muted)"
               >
                 {formatDay(d.date)}
