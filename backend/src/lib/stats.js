@@ -4,8 +4,17 @@ async function getStatsForEtablissement(id) {
   const now = new Date();
   const firstOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 
-  const [totalResult, last7Result, last30Result, thisMonthResult, dailyResult, lastScanResult, etablissementResult] =
-    await Promise.all([
+  const [
+    totalResult,
+    last7Result,
+    last30Result,
+    last7PreviousResult,
+    last30PreviousResult,
+    thisMonthResult,
+    dailyResult,
+    lastScanResult,
+    etablissementResult,
+  ] = await Promise.all([
       pool.query('SELECT COUNT(*)::int AS count FROM scans WHERE etablissement_id = $1', [id]),
       pool.query(
         "SELECT COUNT(*)::int AS count FROM scans WHERE etablissement_id = $1 AND date_scan >= now() - interval '7 days'",
@@ -13,6 +22,14 @@ async function getStatsForEtablissement(id) {
       ),
       pool.query(
         "SELECT COUNT(*)::int AS count FROM scans WHERE etablissement_id = $1 AND date_scan >= now() - interval '30 days'",
+        [id]
+      ),
+      pool.query(
+        "SELECT COUNT(*)::int AS count FROM scans WHERE etablissement_id = $1 AND date_scan >= now() - interval '14 days' AND date_scan < now() - interval '7 days'",
+        [id]
+      ),
+      pool.query(
+        "SELECT COUNT(*)::int AS count FROM scans WHERE etablissement_id = $1 AND date_scan >= now() - interval '60 days' AND date_scan < now() - interval '30 days'",
         [id]
       ),
       pool.query(
@@ -51,8 +68,11 @@ async function getStatsForEtablissement(id) {
   return {
     total: totalResult.rows[0].count,
     today: daily[daily.length - 1].count,
+    yesterday: daily[daily.length - 2].count,
     last7: last7Result.rows[0].count,
+    last7Previous: last7PreviousResult.rows[0].count,
     last30: last30Result.rows[0].count,
+    last30Previous: last30PreviousResult.rows[0].count,
     thisMonth: thisMonthResult.rows[0].count,
     objectifMensuel: etablissementResult.rows[0]?.objectif_mensuel ?? null,
     joursDepuisDernierScan,

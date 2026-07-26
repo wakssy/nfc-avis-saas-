@@ -8,23 +8,29 @@ function formatDay(dateStr: string) {
   return `${day}/${month}`;
 }
 
-function LineChart({ data }: { data: DayValue[] }) {
+function LineChart({ data, color = 'var(--brand)' }: { data: DayValue[]; color?: string }) {
   const width = 700;
   const height = 220;
   const paddingTop = 24;
   const paddingBottom = 24;
   const chartHeight = height - paddingTop - paddingBottom;
 
-  const values = data.map((d) => d.value).filter((v): v is number => v !== null);
+  const known = data.filter((d) => d.value !== null);
 
-  if (values.length === 0) {
+  if (known.length < 3) {
     return (
-      <p className="subtitle" style={{ padding: '24px 0' }}>
-        Pas encore assez de données — revenez dans quelques jours.
-      </p>
+      <div style={{ padding: '32px 8px', textAlign: 'center' }}>
+        <p className="subtitle" style={{ fontSize: 14 }}>
+          Pas encore assez de données pour voir une tendance.
+        </p>
+        <p className="subtitle" style={{ fontSize: 13, marginTop: 4 }}>
+          Revenez dans quelques jours — ça vaut le coup d'œil !
+        </p>
+      </div>
     );
   }
 
+  const values = known.map((d) => d.value as number);
   const max = Math.max(...values);
   const min = Math.min(...values);
   const range = Math.max(1, max - min);
@@ -51,9 +57,9 @@ function LineChart({ data }: { data: DayValue[] }) {
         {max}
       </text>
 
-      <path d={pathD} fill="none" stroke="var(--brand)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+      <path d={pathD} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
 
-      <circle cx={last.x} cy={last.y} r={4} fill="var(--brand)" stroke="var(--surface)" strokeWidth={2} />
+      <circle cx={last.x} cy={last.y} r={4} fill={color} stroke="var(--surface)" strokeWidth={2} />
       <text x={Math.min(last.x, width - 24)} y={last.y - 10} fontSize="11" fill="var(--text-primary)" fontWeight={600} textAnchor="end">
         {last.value}
       </text>

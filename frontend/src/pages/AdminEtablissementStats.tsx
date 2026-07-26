@@ -4,12 +4,16 @@ import { apiFetch } from '../lib/api';
 import BarChart from '../components/BarChart';
 import LineChart from '../components/LineChart';
 import ConversionEstimate from '../components/ConversionEstimate';
+import StatTile from '../components/StatTile';
 
 interface Stats {
   total: number;
   today: number;
+  yesterday: number;
   last7: number;
+  last7Previous: number;
   last30: number;
+  last30Previous: number;
   thisMonth: number;
   objectifMensuel: number | null;
   joursDepuisDernierScan: number | null;
@@ -22,13 +26,10 @@ interface AvisHistorique {
   noteMoyenneActuelle: number | null;
 }
 
-function StatTile({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="stat-tile">
-      <div className="value">{value}</div>
-      <div className="label">{label}</div>
-    </div>
-  );
+function objectifMeterClass(percent: number) {
+  if (percent < 30) return 'low';
+  if (percent < 70) return 'mid';
+  return 'high';
 }
 
 function AdminEtablissementStats() {
@@ -88,15 +89,27 @@ function AdminEtablissementStats() {
       )}
 
       <div className="stat-grid">
-        <StatTile label="Aujourd'hui" value={stats.today} />
-        <StatTile label="Cette semaine" value={stats.last7} />
-        <StatTile label="Ce mois-ci" value={stats.last30} />
+        <StatTile
+          label="Aujourd'hui"
+          value={stats.today}
+          trend={{ diff: stats.today - stats.yesterday, label: 'vs hier' }}
+        />
+        <StatTile
+          label="Cette semaine"
+          value={stats.last7}
+          trend={{ diff: stats.last7 - stats.last7Previous, label: 'vs sem. préc.' }}
+        />
+        <StatTile
+          label="Ce mois-ci"
+          value={stats.last30}
+          trend={{ diff: stats.last30 - stats.last30Previous, label: 'vs période préc.' }}
+        />
         <StatTile label="Total" value={stats.total} />
       </div>
 
       {stats.objectifMensuel !== null && (
         <div className="card" style={{ marginBottom: 16 }}>
-          <p className="section-title" style={{ marginBottom: 8 }}>
+          <p className="section-title section-objectif" style={{ marginBottom: 8 }}>
             Objectif du mois
           </p>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
@@ -106,23 +119,20 @@ function AdminEtablissementStats() {
             <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{percent}%</span>
           </div>
           <div className="meter">
-            <div
-              className={`meter-fill${(percent ?? 0) >= 100 ? ' complete' : ''}`}
-              style={{ width: `${percent}%` }}
-            />
+            <div className={`meter-fill ${objectifMeterClass(percent ?? 0)}`} style={{ width: `${percent}%` }} />
           </div>
         </div>
       )}
 
       <div className="card" style={{ marginBottom: 16 }}>
-        <p className="section-title">Scans par jour (30 derniers jours)</p>
+        <p className="section-title section-scans">Scans par jour (30 derniers jours)</p>
         <BarChart data={stats.daily} />
       </div>
 
       {avis && (
         <div className="card">
           <div className="topbar" style={{ marginBottom: 4 }}>
-            <p className="section-title" style={{ margin: 0 }}>
+            <p className="section-title section-avis" style={{ margin: 0 }}>
               Évolution des avis Google (30 derniers jours)
             </p>
             {avis.nombreAvisActuel !== null && (
@@ -132,7 +142,10 @@ function AdminEtablissementStats() {
               </span>
             )}
           </div>
-          <LineChart data={avis.daily.map((d) => ({ date: d.date, value: d.nombreAvis }))} />
+          <LineChart
+            data={avis.daily.map((d) => ({ date: d.date, value: d.nombreAvis }))}
+            color="var(--accent-avis)"
+          />
         </div>
       )}
 
