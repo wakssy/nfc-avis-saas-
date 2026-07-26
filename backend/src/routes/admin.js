@@ -2,35 +2,13 @@ const express = require('express');
 const pool = require('../db');
 const requireAdmin = require('../middleware/requireAdmin');
 const generateId = require('../lib/generateId');
-const { generateInvitationToken } = require('../lib/token');
-const { sendInvitationEmail } = require('../lib/email');
+const { generateToken } = require('../lib/token');
 const { getStatsForEtablissement } = require('../lib/stats');
 const { getAvisHistorique } = require('../lib/avisStats');
 const { resolvePlaceId } = require('../lib/googlePlaces');
+const { createInvitation, trySendInvitationEmail } = require('../lib/invitation');
 
 const router = express.Router();
-
-const INVITATION_DURATION_MS = 48 * 60 * 60 * 1000;
-
-async function createInvitation(id, email) {
-  const token = generateInvitationToken();
-  const expiresAt = new Date(Date.now() + INVITATION_DURATION_MS);
-
-  await pool.query(
-    'UPDATE etablissements SET email = $1, invitation_token = $2, invitation_expires_at = $3 WHERE id = $4',
-    [email, token, expiresAt, id]
-  );
-
-  return `${process.env.FRONTEND_URL}/invitation/${token}`;
-}
-
-async function trySendInvitationEmail(email, nom, invitationUrl) {
-  try {
-    await sendInvitationEmail({ to: email, nom, invitationUrl });
-  } catch (err) {
-    console.error("Échec de l'envoi de l'email d'invitation:", err);
-  }
-}
 
 router.post('/login', (req, res) => {
   const { password } = req.body;
@@ -55,6 +33,7 @@ router.get('/me', (req, res) => {
 router.get('/etablissements', requireAdmin, async (req, res) => {
   const result = await pool.query(
     `SELECT id, nom, lien_google_avis, email, objectif_mensuel, place_id,
+            paiement_token, abonnement_statut, mois_payes,
             (password_hash IS NOT NULL) AS a_un_compte,
             (invitation_token IS NOT NULL AND invitation_expires_at > now()) AS invitation_en_attente,
             date_creation
@@ -209,6 +188,23 @@ router.post('/etablissements/:id/invite', requireAdmin, async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Erreur serveur' });
   }
+});
+
+router.post('/etablissements/:id/lien-paiement', requireAdmin, async (req, res) => {
+  const { id } = req.params;
+
+  const existing = await pool.query('SELECT paiement_token FROM etablissements WHERE id = $1', [id]);
+  if (existing.rows.length === 0) {
+    return res.status(404).json({ error: 'Établissement introuvable' });
+  }
+
+  let token = existing.rows[0].paiement_token;
+  if (!token) {
+    token = generateToken();
+    await pool.query('UPDATE etablissements SET paiement_token = $1 WHERE id = $2', [token, id]);
+  }
+
+  res.json({ url: `${process.env.FRONTEND_URL}/paiement/${token}` });
 });
 
 module.exports = router;

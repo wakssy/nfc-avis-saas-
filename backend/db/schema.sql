@@ -12,6 +12,11 @@ ALTER TABLE etablissements ADD COLUMN IF NOT EXISTS invitation_expires_at TIMEST
 ALTER TABLE etablissements ADD COLUMN IF NOT EXISTS objectif_mensuel INTEGER;
 ALTER TABLE etablissements ADD COLUMN IF NOT EXISTS place_id TEXT;
 ALTER TABLE etablissements ADD COLUMN IF NOT EXISTS message_relance TEXT;
+ALTER TABLE etablissements ADD COLUMN IF NOT EXISTS paiement_token TEXT UNIQUE;
+ALTER TABLE etablissements ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT;
+ALTER TABLE etablissements ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT;
+ALTER TABLE etablissements ADD COLUMN IF NOT EXISTS abonnement_statut TEXT;
+ALTER TABLE etablissements ADD COLUMN IF NOT EXISTS mois_payes INTEGER NOT NULL DEFAULT 0;
 
 CREATE TABLE IF NOT EXISTS scans (
   id SERIAL PRIMARY KEY,

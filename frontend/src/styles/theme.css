@@ -363,6 +363,16 @@ h1, h2, h3 {
   border: 1px solid var(--border);
 }
 
+.badge-warning {
+  background: var(--warning-tint);
+  color: var(--warning);
+}
+
+.badge-danger {
+  background: var(--danger-tint);
+  color: var(--danger);
+}
+
 .alert {
   display: flex;
   gap: 10px;

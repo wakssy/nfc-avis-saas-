@@ -11,8 +11,20 @@ interface Etablissement {
   place_id: string | null;
   a_un_compte: boolean;
   invitation_en_attente: boolean;
+  paiement_token: string | null;
+  abonnement_statut: string | null;
+  mois_payes: number;
   date_creation: string;
 }
+
+const STATUT_PAIEMENT: Record<string, { label: string; className: string }> = {
+  actif: { label: 'Abonné actif', className: 'badge-success' },
+  plaque_seule: { label: 'Plaque payée', className: 'badge-success' },
+  impaye: { label: 'Impayé', className: 'badge-warning' },
+  resilie: { label: 'Résilié', className: 'badge-muted' },
+  resilie_facture: { label: 'Résilié (45€ facturés)', className: 'badge-muted' },
+  resilie_echec_facturation: { label: '⚠️ Échec facturation 45€', className: 'badge-danger' },
+};
 
 function EtablissementRow({
   e,
@@ -28,6 +40,22 @@ function EtablissementRow({
   const [objectif, setObjectif] = useState(String(e.objectif_mensuel ?? ''));
   const [placeId, setPlaceId] = useState(e.place_id ?? '');
   const [error, setError] = useState('');
+
+  async function handleLienPaiement() {
+    const res = await apiFetch(`/admin/etablissements/${e.id}/lien-paiement`, { method: 'POST' });
+    if (!res.ok) {
+      alert('Erreur lors de la génération du lien de paiement');
+      return;
+    }
+    const data = await res.json();
+    try {
+      await navigator.clipboard.writeText(data.url);
+      alert(`Lien copié dans le presse-papiers :\n${data.url}`);
+    } catch {
+      window.prompt('Copie ce lien :', data.url);
+    }
+    onChanged();
+  }
 
   async function handleInvite() {
     const targetEmail = e.email || window.prompt("Email du commerçant pour l'inviter :");
@@ -85,7 +113,7 @@ function EtablissementRow({
     return (
       <tr>
         <td>{e.id}</td>
-        <td colSpan={6}>
+        <td colSpan={7}>
           <div className="field-row" style={{ marginBottom: 6 }}>
             <input className="input" value={nom} onChange={(ev) => setNom(ev.target.value)} placeholder="Nom" />
             <input
@@ -163,6 +191,20 @@ function EtablissementRow({
             </button>
           </div>
         )}
+      </td>
+      <td>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {e.abonnement_statut && STATUT_PAIEMENT[e.abonnement_statut] ? (
+            <span className={`badge ${STATUT_PAIEMENT[e.abonnement_statut].className}`}>
+              {STATUT_PAIEMENT[e.abonnement_statut].label}
+            </span>
+          ) : (
+            <span className="badge badge-muted">Pas payé</span>
+          )}
+          <button className="btn btn-sm" onClick={handleLienPaiement}>
+            {e.paiement_token ? 'Copier le lien' : 'Générer le lien'}
+          </button>
+        </div>
       </td>
       <td style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
         {new Date(e.date_creation).toLocaleDateString('fr-FR')}
@@ -313,6 +355,7 @@ function AdminDashboard() {
               <th>Avis Google</th>
               <th>Places API</th>
               <th>Compte commerçant</th>
+              <th>Paiement</th>
               <th>Créé le</th>
               <th></th>
             </tr>

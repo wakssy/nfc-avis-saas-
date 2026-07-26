@@ -6,6 +6,9 @@ const pool = require('./db');
 const adminRouter = require('./routes/admin');
 const authRouter = require('./routes/auth');
 const merchantRouter = require('./routes/merchant');
+const paiementRouter = require('./routes/paiement');
+const stripe = require('./lib/stripe');
+const { handleStripeEvent } = require('./lib/stripeWebhookHandlers');
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -17,6 +20,32 @@ if (isProduction) {
 }
 
 app.use(cors({ origin: true, credentials: true }));
+
+// Doit être monté AVANT express.json() : Stripe exige le corps brut (non parsé)
+// pour vérifier la signature du webhook.
+app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      req.headers['stripe-signature'],
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
+  } catch (err) {
+    console.error('Signature webhook Stripe invalide:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  try {
+    await handleStripeEvent(event);
+  } catch (err) {
+    console.error('Erreur lors du traitement du webhook Stripe:', err);
+  }
+
+  res.json({ received: true });
+});
+
 app.use(express.json());
 app.use(
   cookieSession({
@@ -31,6 +60,7 @@ app.use(
 app.use('/api/admin', adminRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/merchant', merchantRouter);
+app.use('/api/paiement', paiementRouter);
 
 app.get('/health', async (req, res) => {
   try {
