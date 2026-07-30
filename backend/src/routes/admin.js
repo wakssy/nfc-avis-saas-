@@ -4,7 +4,7 @@ const requireAdmin = require('../middleware/requireAdmin');
 const generateId = require('../lib/generateId');
 const { getStatsForEtablissement } = require('../lib/stats');
 const { getAvisHistorique } = require('../lib/avisStats');
-const { resolvePlaceId } = require('../lib/googlePlaces');
+const { resolvePlaceId, getPlaceLocationAndType, searchNearbyCompetitors } = require('../lib/googlePlaces');
 const { createInvitation, trySendInvitationEmail } = require('../lib/invitation');
 const { getOrCreatePaiementToken } = require('../lib/paiementToken');
 
@@ -147,6 +147,8 @@ router.delete('/etablissements/:id', requireAdmin, async (req, res) => {
     await client.query('BEGIN');
     await client.query('DELETE FROM scans WHERE etablissement_id = $1', [id]);
     await client.query('DELETE FROM avis_historique WHERE etablissement_id = $1', [id]);
+    await client.query('DELETE FROM concurrents_historique WHERE etablissement_id = $1', [id]);
+    await client.query('DELETE FROM concurrents WHERE etablissement_id = $1', [id]);
     const result = await client.query('DELETE FROM etablissements WHERE id = $1 RETURNING id', [id]);
     await client.query('COMMIT');
 
@@ -197,6 +199,60 @@ router.post('/etablissements/:id/lien-paiement', requireAdmin, async (req, res) 
   }
 
   res.json({ url: `${process.env.FRONTEND_URL}/paiement/${token}` });
+});
+
+router.get('/etablissements/:id/concurrents', requireAdmin, async (req, res) => {
+  const { rows } = await pool.query(
+    'SELECT concurrent_place_id, concurrent_nom, date_ajout FROM concurrents WHERE etablissement_id = $1 ORDER BY concurrent_nom',
+    [req.params.id]
+  );
+  res.json(rows);
+});
+
+router.post('/etablissements/:id/concurrents/recherche', requireAdmin, async (req, res) => {
+  const { id } = req.params;
+
+  const result = await pool.query('SELECT place_id FROM etablissements WHERE id = $1', [id]);
+  const etablissement = result.rows[0];
+
+  if (!etablissement) {
+    return res.status(404).json({ error: 'Établissement introuvable' });
+  }
+  if (!etablissement.place_id) {
+    return res.status(400).json({ error: "Cet établissement n'a pas encore de fiche Google associée (Place ID)" });
+  }
+
+  try {
+    const { lat, lng, type } = await getPlaceLocationAndType(etablissement.place_id);
+    if (lat === null || lng === null) {
+      return res.status(422).json({ error: 'Impossible de localiser cet établissement via Google Places' });
+    }
+
+    const concurrents = await searchNearbyCompetitors({ lat, lng, type, excludePlaceId: etablissement.place_id });
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('DELETE FROM concurrents WHERE etablissement_id = $1', [id]);
+      for (const c of concurrents) {
+        await client.query(
+          'INSERT INTO concurrents (etablissement_id, concurrent_place_id, concurrent_nom) VALUES ($1, $2, $3)',
+          [id, c.placeId, c.nom]
+        );
+      }
+      await client.query('COMMIT');
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+
+    res.json({ concurrents });
+  } catch (err) {
+    console.error('Échec de la recherche de concurrents:', err);
+    res.status(500).json({ error: 'Erreur lors de la recherche de concurrents' });
+  }
 });
 
 module.exports = router;

@@ -9,6 +9,7 @@
     "db:migrate": "node db/migrate.js",
     "db:seed": "node db/seed.js",
     "sync:avis": "node scripts/sync-avis.js",
+    "sync:concurrents": "node scripts/sync-concurrents.js",
     "report:daily": "node scripts/daily-summary.js",
     "report:weekly": "node scripts/weekly-report.js"
   },

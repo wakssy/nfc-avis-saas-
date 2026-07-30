@@ -41,6 +41,22 @@ function EtablissementRow({
   const [placeId, setPlaceId] = useState(e.place_id ?? '');
   const [error, setError] = useState('');
 
+  async function handleRechercheConcurrents() {
+    const res = await apiFetch(`/admin/etablissements/${e.id}/concurrents/recherche`, { method: 'POST' });
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.error || 'Erreur lors de la recherche de concurrents');
+      return;
+    }
+
+    if (data.concurrents.length === 0) {
+      alert('Aucun concurrent pertinent trouvé à proximité.');
+    } else {
+      alert(`Concurrents trouvés :\n${data.concurrents.map((c: { nom: string }) => `- ${c.nom}`).join('\n')}`);
+    }
+  }
+
   async function handleLienPaiement() {
     const res = await apiFetch(`/admin/etablissements/${e.id}/lien-paiement`, { method: 'POST' });
     if (!res.ok) {
@@ -172,11 +188,18 @@ function EtablissementRow({
         </a>
       </td>
       <td>
-        {e.place_id ? (
-          <span className="badge badge-success">Lié</span>
-        ) : (
-          <span className="badge badge-muted">Non lié</span>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {e.place_id ? (
+            <span className="badge badge-success">Lié</span>
+          ) : (
+            <span className="badge badge-muted">Non lié</span>
+          )}
+          {e.place_id && (
+            <button className="btn btn-sm" onClick={handleRechercheConcurrents}>
+              Concurrents
+            </button>
+          )}
+        </div>
       </td>
       <td>
         {e.a_un_compte ? (

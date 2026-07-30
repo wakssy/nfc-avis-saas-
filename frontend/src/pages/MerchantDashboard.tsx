@@ -5,6 +5,7 @@ import BarChart from '../components/BarChart';
 import LineChart from '../components/LineChart';
 import ConversionEstimate from '../components/ConversionEstimate';
 import StatTile from '../components/StatTile';
+import PositionnementGauge from '../components/PositionnementGauge';
 
 interface Stats {
   total: number;
@@ -24,6 +25,13 @@ interface AvisHistorique {
   daily: { date: string; nombreAvis: number | null; noteMoyenne: number | null }[];
   nombreAvisActuel: number | null;
   noteMoyenneActuelle: number | null;
+}
+
+interface Positionnement {
+  positions: { nom: string; nombreAvis: number; estClient: boolean }[];
+  rang: number;
+  total: number;
+  phrase: string;
 }
 
 function objectifMeterClass(percent: number) {
@@ -189,6 +197,7 @@ function MessageRelanceSection() {
 function MerchantDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [avis, setAvis] = useState<AvisHistorique | null>(null);
+  const [positionnement, setPositionnement] = useState<Positionnement | null>(null);
   const navigate = useNavigate();
 
   async function loadStats() {
@@ -208,9 +217,17 @@ function MerchantDashboard() {
     }
   }
 
+  async function loadPositionnement() {
+    const res = await apiFetch('/merchant/positionnement');
+    if (res.ok) {
+      setPositionnement(await res.json());
+    }
+  }
+
   useEffect(() => {
     loadStats();
     loadAvis();
+    loadPositionnement();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -307,6 +324,16 @@ function MerchantDashboard() {
       )}
 
       {avis && <ConversionEstimate scans30={stats.last30} avisDaily={avis.daily} />}
+
+      {positionnement && (
+        <div className="card" style={{ marginTop: 16 }}>
+          <p className="section-title section-concurrence">Comparaison locale</p>
+          <p className="subtitle" style={{ marginBottom: 16 }}>
+            {positionnement.phrase}
+          </p>
+          <PositionnementGauge positions={positionnement.positions} />
+        </div>
+      )}
 
       <MessageRelanceSection />
     </div>

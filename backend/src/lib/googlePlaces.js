@@ -69,4 +69,73 @@ async function getPlaceDetails(placeId) {
   };
 }
 
-module.exports = { extractPlaceIdFromUrl, findPlaceIdByText, resolvePlaceId, getPlaceDetails };
+const RAYON_RECHERCHE_CONCURRENTS_METRES = 1500;
+const TYPES_GENERIQUES = ['point_of_interest', 'establishment', 'food', 'store'];
+
+async function getPlaceLocationAndType(placeId) {
+  const res = await fetch(`https://places.googleapis.com/v1/places/${placeId}`, {
+    headers: {
+      'X-Goog-Api-Key': process.env.GOOGLE_PLACES_API_KEY,
+      'X-Goog-FieldMask': 'location,primaryType,types',
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Places API a répondu ${res.status}: ${await res.text()}`);
+  }
+
+  const data = await res.json();
+  const type = data.primaryType || (data.types || []).find((t) => !TYPES_GENERIQUES.includes(t)) || null;
+
+  return {
+    lat: data.location?.latitude ?? null,
+    lng: data.location?.longitude ?? null,
+    type,
+  };
+}
+
+async function searchNearbyCompetitors({ lat, lng, type, excludePlaceId, radius = RAYON_RECHERCHE_CONCURRENTS_METRES }) {
+  const body = {
+    maxResultCount: 20,
+    locationRestriction: {
+      circle: { center: { latitude: lat, longitude: lng }, radius },
+    },
+  };
+  if (type) body.includedTypes = [type];
+
+  const res = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Goog-Api-Key': process.env.GOOGLE_PLACES_API_KEY,
+      'X-Goog-FieldMask': 'places.id,places.displayName,places.userRatingCount',
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Nearby Search a répondu ${res.status}: ${await res.text()}`);
+  }
+
+  const data = await res.json();
+  const places = data.places || [];
+
+  return places
+    .filter((p) => p.id !== excludePlaceId)
+    .map((p) => ({
+      placeId: p.id,
+      nom: p.displayName?.text || 'Établissement',
+      userRatingCount: p.userRatingCount ?? 0,
+    }))
+    .sort((a, b) => b.userRatingCount - a.userRatingCount)
+    .slice(0, 3);
+}
+
+module.exports = {
+  extractPlaceIdFromUrl,
+  findPlaceIdByText,
+  resolvePlaceId,
+  getPlaceDetails,
+  getPlaceLocationAndType,
+  searchNearbyCompetitors,
+};

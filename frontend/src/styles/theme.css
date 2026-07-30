@@ -18,6 +18,8 @@
   --accent-avis-tint: #efecfb;
   --accent-objectif: #eb6834;
   --accent-objectif-tint: #fdeee7;
+  --accent-concurrence: #0f8a7d;
+  --accent-concurrence-tint: #e5f5f3;
 
   --success: #0ca30c;
   --success-tint: #e7f7e7;
@@ -58,6 +60,8 @@
     --accent-avis-tint: #211c3d;
     --accent-objectif: #d95926;
     --accent-objectif-tint: #3a2013;
+    --accent-concurrence: #2dd4bf;
+    --accent-concurrence-tint: #0f2e2a;
 
     --success: #22c55e;
     --success-tint: #123018;
@@ -202,6 +206,10 @@ h1, h2, h3 {
 
 .section-objectif {
   --dot-color: var(--accent-objectif);
+}
+
+.section-concurrence {
+  --dot-color: var(--accent-concurrence);
 }
 
 .trend {

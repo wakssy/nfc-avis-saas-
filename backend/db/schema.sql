@@ -36,3 +36,27 @@ CREATE TABLE IF NOT EXISTS avis_historique (
 );
 
 CREATE INDEX IF NOT EXISTS idx_avis_historique_etablissement_id ON avis_historique(etablissement_id);
+
+CREATE TABLE IF NOT EXISTS concurrents (
+  id SERIAL PRIMARY KEY,
+  etablissement_id TEXT NOT NULL REFERENCES etablissements(id),
+  concurrent_place_id TEXT NOT NULL,
+  concurrent_nom TEXT NOT NULL,
+  date_ajout TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (etablissement_id, concurrent_place_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_concurrents_etablissement_id ON concurrents(etablissement_id);
+
+CREATE TABLE IF NOT EXISTS concurrents_historique (
+  id SERIAL PRIMARY KEY,
+  etablissement_id TEXT NOT NULL REFERENCES etablissements(id),
+  concurrent_place_id TEXT NOT NULL,
+  concurrent_nom TEXT NOT NULL,
+  date DATE NOT NULL DEFAULT CURRENT_DATE,
+  nombre_avis INTEGER NOT NULL,
+  note_moyenne NUMERIC(2, 1) NOT NULL,
+  UNIQUE (etablissement_id, concurrent_place_id, date)
+);
+
+CREATE INDEX IF NOT EXISTS idx_concurrents_historique_etablissement_id ON concurrents_historique(etablissement_id);
