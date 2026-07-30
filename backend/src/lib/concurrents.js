@@ -1,6 +1,12 @@
 const pool = require('../db');
 
 async function getPositionnement(etablissementId) {
+  const { rows: etabRows } = await pool.query(
+    'SELECT positionnement_active FROM etablissements WHERE id = $1',
+    [etablissementId]
+  );
+  if (etabRows.length === 0 || !etabRows[0].positionnement_active) return null;
+
   const { rows: concurrents } = await pool.query(
     `SELECT DISTINCT ON (concurrent_place_id) concurrent_place_id, concurrent_nom, nombre_avis
      FROM concurrents_historique

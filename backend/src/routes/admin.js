@@ -34,7 +34,7 @@ router.get('/me', (req, res) => {
 router.get('/etablissements', requireAdmin, async (req, res) => {
   const result = await pool.query(
     `SELECT id, nom, lien_google_avis, email, objectif_mensuel, place_id,
-            paiement_token, abonnement_statut, mois_payes,
+            paiement_token, abonnement_statut, mois_payes, positionnement_active,
             (password_hash IS NOT NULL) AS a_un_compte,
             (invitation_token IS NOT NULL AND invitation_expires_at > now()) AS invitation_en_attente,
             date_creation
@@ -218,6 +218,19 @@ router.get('/etablissements/:id/concurrents', requireAdmin, async (req, res) => 
     [req.params.id]
   );
   res.json(rows);
+});
+
+router.put('/etablissements/:id/comparaison-locale', requireAdmin, async (req, res) => {
+  const result = await pool.query(
+    'UPDATE etablissements SET positionnement_active = $1 WHERE id = $2 RETURNING positionnement_active',
+    [Boolean(req.body?.active), req.params.id]
+  );
+
+  if (result.rows.length === 0) {
+    return res.status(404).json({ error: 'Établissement introuvable' });
+  }
+
+  res.json({ positionnementActive: result.rows[0].positionnement_active });
 });
 
 router.post('/etablissements/:id/concurrents/recherche', requireAdmin, async (req, res) => {

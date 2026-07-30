@@ -22,6 +22,7 @@ interface Etablissement {
   paiement_token: string | null;
   abonnement_statut: string | null;
   mois_payes: number;
+  positionnement_active: boolean;
   date_creation: string;
 }
 
@@ -75,6 +76,18 @@ function EtablissementRow({
   async function handleCategorieChoisie(value: string) {
     setShowCategoryPicker(false);
     await handleRechercheConcurrents(value);
+  }
+
+  async function handleToggleComparaisonLocale() {
+    const res = await apiFetch(`/admin/etablissements/${e.id}/comparaison-locale`, {
+      method: 'PUT',
+      body: JSON.stringify({ active: !e.positionnement_active }),
+    });
+    if (res.ok) {
+      onChanged();
+    } else {
+      alert("Erreur lors de la mise à jour de la comparaison locale");
+    }
   }
 
   async function handleLienPaiement() {
@@ -209,21 +222,33 @@ function EtablissementRow({
         </a>
       </td>
       <td>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          {e.place_id ? (
-            <span className="badge badge-success">Lié</span>
-          ) : (
-            <span className="badge badge-muted">Non lié</span>
-          )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {e.place_id ? (
+              <span className="badge badge-success">Lié</span>
+            ) : (
+              <span className="badge badge-muted">Non lié</span>
+            )}
+            {e.place_id && (
+              <>
+                <button className="btn btn-sm" onClick={() => handleRechercheConcurrents()}>
+                  Concurrents
+                </button>
+                <button className="btn-link" style={{ fontSize: 12 }} onClick={() => setShowCategoryPicker(true)}>
+                  Changer catégorie
+                </button>
+              </>
+            )}
+          </div>
           {e.place_id && (
-            <>
-              <button className="btn btn-sm" onClick={() => handleRechercheConcurrents()}>
-                Concurrents
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span className={`badge ${e.positionnement_active ? 'badge-success' : 'badge-muted'}`}>
+                Comparaison locale {e.positionnement_active ? 'activée' : 'désactivée'}
+              </span>
+              <button className="btn-link" style={{ fontSize: 12 }} onClick={handleToggleComparaisonLocale}>
+                {e.positionnement_active ? 'Désactiver' : 'Activer'}
               </button>
-              <button className="btn-link" style={{ fontSize: 12 }} onClick={() => setShowCategoryPicker(true)}>
-                Changer catégorie
-              </button>
-            </>
+            </div>
           )}
         </div>
       </td>

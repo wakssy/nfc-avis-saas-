@@ -60,3 +60,5 @@ CREATE TABLE IF NOT EXISTS concurrents_historique (
 );
 
 CREATE INDEX IF NOT EXISTS idx_concurrents_historique_etablissement_id ON concurrents_historique(etablissement_id);
+
+ALTER TABLE etablissements ADD COLUMN IF NOT EXISTS positionnement_active BOOLEAN NOT NULL DEFAULT true;
