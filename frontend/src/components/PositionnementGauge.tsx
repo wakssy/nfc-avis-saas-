@@ -34,7 +34,7 @@ function PositionnementGauge({ positions }: { positions: Position[] }) {
     <svg viewBox={`0 0 ${width} ${height}`} style={{ width: '100%', height: 'auto', display: 'block' }}>
       <line x1={paddingX} x2={width - paddingX} y1={axisY} y2={axisY} stroke="var(--gridline)" strokeWidth={2} />
 
-      {points.map((p, i) =>
+      {points.map((p) =>
         p.estClient ? (
           <text
             key={`label-top-${p.nom}`}
