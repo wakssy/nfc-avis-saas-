@@ -4,6 +4,7 @@ const requireAdmin = require('../middleware/requireAdmin');
 const generateId = require('../lib/generateId');
 const { getStatsForEtablissement } = require('../lib/stats');
 const { getAvisHistorique } = require('../lib/avisStats');
+const { getPositionnement } = require('../lib/concurrents');
 const { resolvePlaceId, getPlaceLocationAndType, searchNearbyCompetitors } = require('../lib/googlePlaces');
 const { createInvitation, trySendInvitationEmail } = require('../lib/invitation');
 const { getOrCreatePaiementToken } = require('../lib/paiementToken');
@@ -55,6 +56,16 @@ router.get('/etablissements/:id/stats', requireAdmin, async (req, res) => {
 router.get('/etablissements/:id/avis-historique', requireAdmin, async (req, res) => {
   try {
     const data = await getAvisHistorique(req.params.id);
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+router.get('/etablissements/:id/positionnement', requireAdmin, async (req, res) => {
+  try {
+    const data = await getPositionnement(req.params.id);
     res.json(data);
   } catch (err) {
     console.error(err);
@@ -223,10 +234,13 @@ router.post('/etablissements/:id/concurrents/recherche', requireAdmin, async (re
   }
 
   try {
-    const { lat, lng, type } = await getPlaceLocationAndType(etablissement.place_id);
+    const { lat, lng, type: typeDetecte } = await getPlaceLocationAndType(etablissement.place_id);
     if (lat === null || lng === null) {
       return res.status(422).json({ error: 'Impossible de localiser cet établissement via Google Places' });
     }
+
+    const typeOverride = typeof req.body?.type === 'string' ? req.body.type.trim() : undefined;
+    const type = typeOverride !== undefined ? typeOverride || null : typeDetecte;
 
     const concurrents = await searchNearbyCompetitors({ lat, lng, type, excludePlaceId: etablissement.place_id });
 
@@ -248,7 +262,7 @@ router.post('/etablissements/:id/concurrents/recherche', requireAdmin, async (re
       client.release();
     }
 
-    res.json({ concurrents });
+    res.json({ concurrents, typeUtilise: type, typeDetecte });
   } catch (err) {
     console.error('Échec de la recherche de concurrents:', err);
     res.status(500).json({ error: 'Erreur lors de la recherche de concurrents' });

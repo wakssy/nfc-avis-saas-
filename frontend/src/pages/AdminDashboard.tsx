@@ -41,8 +41,11 @@ function EtablissementRow({
   const [placeId, setPlaceId] = useState(e.place_id ?? '');
   const [error, setError] = useState('');
 
-  async function handleRechercheConcurrents() {
-    const res = await apiFetch(`/admin/etablissements/${e.id}/concurrents/recherche`, { method: 'POST' });
+  async function handleRechercheConcurrents(typeOverride?: string) {
+    const res = await apiFetch(`/admin/etablissements/${e.id}/concurrents/recherche`, {
+      method: 'POST',
+      body: JSON.stringify(typeOverride !== undefined ? { type: typeOverride } : {}),
+    });
     const data = await res.json();
 
     if (!res.ok) {
@@ -50,11 +53,23 @@ function EtablissementRow({
       return;
     }
 
+    const categorie = data.typeUtilise ? ` (catégorie : ${data.typeUtilise})` : '';
     if (data.concurrents.length === 0) {
-      alert('Aucun concurrent pertinent trouvé à proximité.');
+      alert(`Aucun concurrent pertinent trouvé à proximité${categorie}.`);
     } else {
-      alert(`Concurrents trouvés :\n${data.concurrents.map((c: { nom: string }) => `- ${c.nom}`).join('\n')}`);
+      alert(
+        `Concurrents trouvés${categorie} :\n${data.concurrents.map((c: { nom: string }) => `- ${c.nom}`).join('\n')}`
+      );
     }
+  }
+
+  async function handleChangerCategorie() {
+    const nouvelleCategorie = window.prompt(
+      "Si les concurrents trouvés ne sont pas pertinents, indique la catégorie Google Places à utiliser à la place (ex: electronics_store, restaurant, hair_salon...).\nLaisser vide pour chercher sans filtre de catégorie."
+    );
+    if (nouvelleCategorie === null) return;
+
+    await handleRechercheConcurrents(nouvelleCategorie.trim());
   }
 
   async function handleLienPaiement() {
@@ -195,9 +210,14 @@ function EtablissementRow({
             <span className="badge badge-muted">Non lié</span>
           )}
           {e.place_id && (
-            <button className="btn btn-sm" onClick={handleRechercheConcurrents}>
-              Concurrents
-            </button>
+            <>
+              <button className="btn btn-sm" onClick={() => handleRechercheConcurrents()}>
+                Concurrents
+              </button>
+              <button className="btn-link" style={{ fontSize: 12 }} onClick={handleChangerCategorie}>
+                Changer catégorie
+              </button>
+            </>
           )}
         </div>
       </td>
