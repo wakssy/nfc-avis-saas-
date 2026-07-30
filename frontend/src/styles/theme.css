@@ -177,6 +177,65 @@ h1, h2, h3 {
   margin-top: 16px;
 }
 
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 100;
+}
+
+.modal-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card-hover);
+  padding: 20px;
+  width: 100%;
+  max-width: 420px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.category-list {
+  margin-top: 10px;
+  overflow-y: auto;
+  max-height: 320px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+}
+
+.category-list-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.category-list-item:last-child {
+  border-bottom: none;
+}
+
+.category-list-item:hover {
+  background: var(--brand-tint);
+}
+
+.category-list-item-muted {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
 .section-title {
   font-size: 15px;
   font-weight: 600;

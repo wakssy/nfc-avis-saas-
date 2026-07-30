@@ -1,6 +1,14 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, Link } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
+import { PLACE_CATEGORIES } from '../lib/placeCategories';
+import CategoryPickerModal from '../components/CategoryPickerModal';
+
+function labelCategorie(value: string | null) {
+  if (!value) return null;
+  return PLACE_CATEGORIES.find((c) => c.value === value)?.label ?? value;
+}
 
 interface Etablissement {
   id: string;
@@ -40,6 +48,7 @@ function EtablissementRow({
   const [objectif, setObjectif] = useState(String(e.objectif_mensuel ?? ''));
   const [placeId, setPlaceId] = useState(e.place_id ?? '');
   const [error, setError] = useState('');
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
 
   async function handleRechercheConcurrents(typeOverride?: string) {
     const res = await apiFetch(`/admin/etablissements/${e.id}/concurrents/recherche`, {
@@ -53,7 +62,7 @@ function EtablissementRow({
       return;
     }
 
-    const categorie = data.typeUtilise ? ` (catégorie : ${data.typeUtilise})` : '';
+    const categorie = labelCategorie(data.typeUtilise) ? ` (catégorie : ${labelCategorie(data.typeUtilise)})` : '';
     if (data.concurrents.length === 0) {
       alert(`Aucun concurrent pertinent trouvé à proximité${categorie}.`);
     } else {
@@ -63,13 +72,9 @@ function EtablissementRow({
     }
   }
 
-  async function handleChangerCategorie() {
-    const nouvelleCategorie = window.prompt(
-      "Si les concurrents trouvés ne sont pas pertinents, indique la catégorie Google Places à utiliser à la place (ex: electronics_store, restaurant, hair_salon...).\nLaisser vide pour chercher sans filtre de catégorie."
-    );
-    if (nouvelleCategorie === null) return;
-
-    await handleRechercheConcurrents(nouvelleCategorie.trim());
+  async function handleCategorieChoisie(value: string) {
+    setShowCategoryPicker(false);
+    await handleRechercheConcurrents(value);
   }
 
   async function handleLienPaiement() {
@@ -192,6 +197,7 @@ function EtablissementRow({
   }
 
   return (
+    <>
     <tr>
       <td>
         <code>{e.id}</code>
@@ -214,7 +220,7 @@ function EtablissementRow({
               <button className="btn btn-sm" onClick={() => handleRechercheConcurrents()}>
                 Concurrents
               </button>
-              <button className="btn-link" style={{ fontSize: 12 }} onClick={handleChangerCategorie}>
+              <button className="btn-link" style={{ fontSize: 12 }} onClick={() => setShowCategoryPicker(true)}>
                 Changer catégorie
               </button>
             </>
@@ -266,6 +272,12 @@ function EtablissementRow({
         </div>
       </td>
     </tr>
+    {showCategoryPicker &&
+      createPortal(
+        <CategoryPickerModal onSelect={handleCategorieChoisie} onClose={() => setShowCategoryPicker(false)} />,
+        document.body
+      )}
+    </>
   );
 }
 
