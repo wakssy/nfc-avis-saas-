@@ -160,6 +160,7 @@ router.delete('/etablissements/:id', requireAdmin, async (req, res) => {
     await client.query('DELETE FROM avis_historique WHERE etablissement_id = $1', [id]);
     await client.query('DELETE FROM concurrents_historique WHERE etablissement_id = $1', [id]);
     await client.query('DELETE FROM concurrents WHERE etablissement_id = $1', [id]);
+    await client.query('DELETE FROM avis_recus WHERE etablissement_id = $1', [id]);
     const result = await client.query('DELETE FROM etablissements WHERE id = $1 RETURNING id', [id]);
     await client.query('COMMIT');
 

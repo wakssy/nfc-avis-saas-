@@ -6,6 +6,7 @@ import LineChart from '../components/LineChart';
 import ConversionEstimate from '../components/ConversionEstimate';
 import StatTile from '../components/StatTile';
 import PositionnementGauge from '../components/PositionnementGauge';
+import AvisRecusSection from '../components/AvisRecusSection';
 
 interface Stats {
   total: number;
@@ -322,6 +323,8 @@ function MerchantDashboard() {
           />
         </div>
       )}
+
+      <AvisRecusSection />
 
       {avis && <ConversionEstimate scans30={stats.last30} avisDaily={avis.daily} />}
 

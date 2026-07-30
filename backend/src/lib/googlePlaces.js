@@ -69,6 +69,29 @@ async function getPlaceDetails(placeId) {
   };
 }
 
+async function getPlaceReviews(placeId) {
+  const res = await fetch(`https://places.googleapis.com/v1/places/${placeId}?languageCode=fr`, {
+    headers: {
+      'X-Goog-Api-Key': process.env.GOOGLE_PLACES_API_KEY,
+      'X-Goog-FieldMask': 'reviews',
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Places API a répondu ${res.status}: ${await res.text()}`);
+  }
+
+  const data = await res.json();
+  const reviews = data.reviews || [];
+
+  return reviews.map((r) => ({
+    auteur: r.authorAttribution?.displayName || 'Client Google',
+    note: r.rating,
+    texte: r.originalText?.text || r.text?.text || null,
+    dateAvis: r.publishTime,
+  }));
+}
+
 const RAYON_RECHERCHE_CONCURRENTS_METRES = 1500;
 const TYPES_GENERIQUES = ['point_of_interest', 'establishment', 'food', 'store'];
 
@@ -136,6 +159,7 @@ module.exports = {
   findPlaceIdByText,
   resolvePlaceId,
   getPlaceDetails,
+  getPlaceReviews,
   getPlaceLocationAndType,
   searchNearbyCompetitors,
 };

@@ -62,3 +62,18 @@ CREATE TABLE IF NOT EXISTS concurrents_historique (
 CREATE INDEX IF NOT EXISTS idx_concurrents_historique_etablissement_id ON concurrents_historique(etablissement_id);
 
 ALTER TABLE etablissements ADD COLUMN IF NOT EXISTS positionnement_active BOOLEAN NOT NULL DEFAULT true;
+
+CREATE TABLE IF NOT EXISTS avis_recus (
+  id SERIAL PRIMARY KEY,
+  etablissement_id TEXT NOT NULL REFERENCES etablissements(id),
+  auteur TEXT NOT NULL,
+  note INTEGER NOT NULL,
+  texte_avis TEXT,
+  date_avis TIMESTAMPTZ NOT NULL,
+  reponse_suggeree TEXT,
+  reponse_marquee_traitee BOOLEAN NOT NULL DEFAULT false,
+  date_creation TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (etablissement_id, auteur, date_avis, note)
+);
+
+CREATE INDEX IF NOT EXISTS idx_avis_recus_etablissement_id ON avis_recus(etablissement_id);

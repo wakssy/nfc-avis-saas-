@@ -10,6 +10,7 @@
     "db:seed": "node db/seed.js",
     "sync:avis": "node scripts/sync-avis.js",
     "sync:concurrents": "node scripts/sync-concurrents.js",
+    "sync:avis-recents": "node scripts/sync-avis-recents.js",
     "report:daily": "node scripts/daily-summary.js",
     "report:weekly": "node scripts/weekly-report.js"
   },
