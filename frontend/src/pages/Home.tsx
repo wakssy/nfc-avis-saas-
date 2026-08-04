@@ -187,7 +187,13 @@ function Home() {
               <div className="plaque-ring" />
               <picture>
                 <source srcSet="/plaque.webp" type="image/webp" />
-                <img className="plaque-photo" src="/plaque.png" alt="" width={954} height={1008} />
+                <img
+                  className="plaque-photo"
+                  src="/plaque.png"
+                  alt="Plaque avisplaque avec picto NFC et QR code, a poser sur un comptoir pour collecter des avis Google"
+                  width={954}
+                  height={1008}
+                />
               </picture>
               <div className="hero-chip">
                 <span className="stars">★★★★★</span>
