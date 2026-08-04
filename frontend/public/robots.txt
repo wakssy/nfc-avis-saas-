@@ -6,4 +6,4 @@ Disallow: /invitation
 Disallow: /paiement
 Disallow: /r/
 
-Sitemap: https://avisplaque.fr/sitemap.xml
+Sitemap: https://www.avisplaque.fr/sitemap.xml
