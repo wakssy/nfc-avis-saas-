@@ -7,6 +7,7 @@ const adminRouter = require('./routes/admin');
 const authRouter = require('./routes/auth');
 const merchantRouter = require('./routes/merchant');
 const paiementRouter = require('./routes/paiement');
+const contactRouter = require('./routes/contact');
 const stripe = require('./lib/stripe');
 const { handleStripeEvent } = require('./lib/stripeWebhookHandlers');
 
@@ -61,6 +62,7 @@ app.use('/api/admin', adminRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/merchant', merchantRouter);
 app.use('/api/paiement', paiementRouter);
+app.use('/api/contact', contactRouter);
 
 app.get('/health', async (req, res) => {
   try {

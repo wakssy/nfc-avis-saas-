@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
+import Logo from '../components/Logo';
 
 function AdminLogin() {
   const [password, setPassword] = useState('');
@@ -28,9 +29,7 @@ function AdminLogin() {
     <div className="center-page">
       <div className="container-narrow" style={{ width: '100%' }}>
         <div className="card">
-          <div className="logo-mark">
-            avis<span>plaque</span>
-          </div>
+          <Logo />
           <p className="subtitle" style={{ marginBottom: 20 }}>
             Back-office administrateur
           </p>

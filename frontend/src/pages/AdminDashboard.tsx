@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
 import { PLACE_CATEGORIES } from '../lib/placeCategories';
 import CategoryPickerModal from '../components/CategoryPickerModal';
+import Logo from '../components/Logo';
 
 function labelCategorie(value: string | null) {
   if (!value) return null;
@@ -375,9 +376,7 @@ function AdminDashboard() {
     <div className="container" style={{ maxWidth: 1100 }}>
       <div className="topbar">
         <div>
-          <div className="logo-mark" style={{ fontSize: 16 }}>
-            avis<span>plaque</span>
-          </div>
+          <Logo style={{ fontSize: 16 }} />
           <h1>Établissements</h1>
         </div>
         <button className="btn" onClick={handleLogout}>

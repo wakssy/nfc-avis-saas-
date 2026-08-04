@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
+import Logo from '../components/Logo';
 
 function AcceptInvitation() {
   const { token } = useParams();
@@ -51,9 +52,7 @@ function AcceptInvitation() {
     <div className="center-page">
       <div className="container-narrow" style={{ width: '100%' }}>
         <div className="card">
-          <div className="logo-mark">
-            avis<span>plaque</span>
-          </div>
+          <Logo />
           <h2 style={{ fontSize: 18, margin: '16px 0 8px' }}>Créer votre accès</h2>
 
           {loading ? (

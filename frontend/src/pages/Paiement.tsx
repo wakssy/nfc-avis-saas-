@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
+import Logo from '../components/Logo';
 
 function Paiement() {
   const { token } = useParams();
@@ -56,9 +57,7 @@ function Paiement() {
     <div className="center-page">
       <div className="container-narrow" style={{ width: '100%', maxWidth: 480 }}>
         <div className="card">
-          <div className="logo-mark">
-            avis<span>plaque</span>
-          </div>
+          <Logo />
 
           {loading ? (
             <p className="subtitle">Chargement...</p>

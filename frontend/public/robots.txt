@@ -1,2 +1,7 @@
 User-agent: *
-Disallow: /
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /login
+Disallow: /invitation
+Disallow: /paiement
+Disallow: /r/

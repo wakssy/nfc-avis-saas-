@@ -39,6 +39,11 @@ async function run() {
       const avisThisWeek = avisToday !== null && avis7dAgo !== null ? avisToday - avis7dAgo : null;
       const avisLastWeek = avis7dAgo !== null && avis14dAgo !== null ? avis7dAgo - avis14dAgo : null;
 
+      const { rows: avisEnAttenteRows } = await pool.query(
+        'SELECT COUNT(*)::int AS count FROM avis_recus WHERE etablissement_id = $1 AND reponse_marquee_traitee = false',
+        [e.id]
+      );
+
       await sendWeeklyReport({
         to: e.email,
         nom: e.nom,
@@ -47,6 +52,7 @@ async function run() {
         scansLastWeek,
         avisThisWeek,
         avisLastWeek,
+        avisEnAttente: avisEnAttenteRows[0].count,
       });
 
       console.log(`${e.nom}: rapport hebdomadaire envoyé`);

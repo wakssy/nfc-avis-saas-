@@ -7,6 +7,7 @@ import ConversionEstimate from '../components/ConversionEstimate';
 import StatTile from '../components/StatTile';
 import PositionnementGauge from '../components/PositionnementGauge';
 import AvisRecusSection from '../components/AvisRecusSection';
+import Logo from '../components/Logo';
 
 interface Stats {
   total: number;
@@ -251,9 +252,7 @@ function MerchantDashboard() {
     <div className="container">
       <div className="topbar">
         <div>
-          <div className="logo-mark" style={{ fontSize: 16 }}>
-            avis<span>plaque</span>
-          </div>
+          <Logo style={{ fontSize: 16 }} />
           <h1>Mes statistiques</h1>
         </div>
         <button className="btn" onClick={handleLogout}>
