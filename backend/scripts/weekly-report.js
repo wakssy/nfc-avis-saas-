@@ -1,7 +1,37 @@
 require('dotenv').config();
 const pool = require('../src/db');
 const { getAvisHistorique } = require('../src/lib/avisStats');
+const { getPositionnement } = require('../src/lib/concurrents');
 const { sendWeeklyReport } = require('../src/lib/emailReports');
+
+async function getBilanMensuel(etablissementId) {
+  const { rows: scanRows } = await pool.query(
+    `SELECT
+       COUNT(*) FILTER (WHERE date_scan >= now() - interval '30 days')::int AS ce_mois,
+       COUNT(*) FILTER (WHERE date_scan >= now() - interval '60 days' AND date_scan < now() - interval '30 days')::int AS mois_precedent
+     FROM scans WHERE etablissement_id = $1`,
+    [etablissementId]
+  );
+
+  const { rows: reponseRows } = await pool.query(
+    `SELECT
+       COUNT(*)::int AS total,
+       COUNT(*) FILTER (WHERE reponse_marquee_traitee)::int AS traites
+     FROM avis_recus
+     WHERE etablissement_id = $1 AND date_creation >= now() - interval '30 days'`,
+    [etablissementId]
+  );
+
+  const positionnement = await getPositionnement(etablissementId);
+
+  return {
+    scansCeMois: scanRows[0].ce_mois,
+    scansMoisPrecedent: scanRows[0].mois_precedent,
+    avisTraites: reponseRows[0].traites,
+    avisRecusTotal: reponseRows[0].total,
+    positionnementPhrase: positionnement?.phrase || null,
+  };
+}
 
 async function run() {
   const isMonday = new Date().getUTCDay() === 1;
@@ -10,6 +40,8 @@ async function run() {
     await pool.end();
     return;
   }
+
+  const isPremierLundiDuMois = new Date().getUTCDate() <= 7;
 
   const { rows: etablissements } = await pool.query(
     `SELECT id, nom, email, message_relance FROM etablissements
@@ -35,6 +67,7 @@ async function run() {
       const avisToday = daily[29].nombreAvis;
       const avis7dAgo = daily[22].nombreAvis;
       const avis14dAgo = daily[15].nombreAvis;
+      const avis30dAgo = daily[0].nombreAvis;
 
       const avisThisWeek = avisToday !== null && avis7dAgo !== null ? avisToday - avis7dAgo : null;
       const avisLastWeek = avis7dAgo !== null && avis14dAgo !== null ? avis7dAgo - avis14dAgo : null;
@@ -44,10 +77,19 @@ async function run() {
         [e.id]
       );
 
+      let bilanMensuel = null;
+      if (isPremierLundiDuMois) {
+        bilanMensuel = await getBilanMensuel(e.id);
+        bilanMensuel.avisCeMois =
+          avisToday !== null && avis30dAgo !== null ? avisToday - avis30dAgo : null;
+        bilanMensuel.noteMoyenneActuelle = avis.noteMoyenneActuelle;
+      }
+
       await sendWeeklyReport({
         to: e.email,
         nom: e.nom,
         messageRelance: e.message_relance,
+        bilanMensuel,
         scansThisWeek,
         scansLastWeek,
         avisThisWeek,
