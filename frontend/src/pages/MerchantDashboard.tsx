@@ -273,21 +273,32 @@ function MerchantDashboard() {
 
       <div className="stat-grid">
         <StatTile
-          label="Aujourd'hui"
+          label="Scans aujourd'hui"
           value={stats.today}
           trend={{ diff: stats.today - stats.yesterday, label: 'vs hier' }}
         />
         <StatTile
-          label="Cette semaine"
+          label="Scans cette semaine"
           value={stats.last7}
           trend={{ diff: stats.last7 - stats.last7Previous, label: 'vs sem. préc.' }}
         />
         <StatTile
-          label="Ce mois-ci"
+          label="Scans ce mois-ci"
           value={stats.last30}
           trend={{ diff: stats.last30 - stats.last30Previous, label: 'vs période préc.' }}
         />
-        <StatTile label="Total" value={stats.total} />
+        <StatTile label="Scans au total" value={stats.total} />
+        {avis && avis.nombreAvisActuel !== null && (
+          <StatTile
+            label="Avis Google (total)"
+            value={avis.nombreAvisActuel}
+            trend={
+              avis.daily[0].nombreAvis !== null
+                ? { diff: avis.nombreAvisActuel - avis.daily[0].nombreAvis, label: 'vs 30j' }
+                : undefined
+            }
+          />
+        )}
       </div>
 
       <div style={{ marginBottom: 16 }}>
