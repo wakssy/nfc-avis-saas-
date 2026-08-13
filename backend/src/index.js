@@ -80,7 +80,7 @@ app.get('/r/:id', async (req, res) => {
 
   try {
     const result = await pool.query(
-      'SELECT lien_google_avis FROM etablissements WHERE id = $1',
+      'SELECT lien_google_avis, abonnement_statut FROM etablissements WHERE id = $1',
       [id]
     );
     etablissement = result.rows[0];
@@ -91,6 +91,10 @@ app.get('/r/:id', async (req, res) => {
 
   if (!etablissement) {
     return res.status(404).send('Ce lien ne correspond à aucun établissement.');
+  }
+
+  if (etablissement.abonnement_statut && etablissement.abonnement_statut.startsWith('resilie')) {
+    return res.status(410).send("Ce lien n'est plus disponible.");
   }
 
   try {

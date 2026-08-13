@@ -112,7 +112,7 @@ function Paiement() {
                   14,99 € <span style={{ fontSize: 14, fontWeight: 400, color: 'var(--text-secondary)' }}>/mois</span>
                 </p>
                 <p className="subtitle" style={{ marginBottom: 12 }}>
-                  Plaque offerte. Engagement minimum de 2 mois.
+                  Plaque offerte. Sans engagement, résiliable à tout moment.
                 </p>
                 <button
                   className="btn btn-primary"

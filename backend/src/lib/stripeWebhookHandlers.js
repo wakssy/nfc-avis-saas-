@@ -1,9 +1,5 @@
 const pool = require('../db');
-const stripe = require('./stripe');
 const { createInvitation, trySendInvitationEmail } = require('./invitation');
-
-const MOIS_ENGAGEMENT_MINIMUM = 2;
-const PRIX_PLAQUE_CENTIMES = 4500;
 
 function getInvoiceSubscriptionId(invoice) {
   return invoice.subscription || invoice.parent?.subscription_details?.subscription || null;
@@ -77,7 +73,7 @@ async function handleInvoicePaymentFailed(invoice) {
 
 async function handleSubscriptionDeleted(subscription) {
   const result = await pool.query(
-    'SELECT id, nom, mois_payes, stripe_customer_id FROM etablissements WHERE stripe_subscription_id = $1',
+    `UPDATE etablissements SET abonnement_statut = 'resilie' WHERE stripe_subscription_id = $1 RETURNING id, nom`,
     [subscription.id]
   );
   const etablissement = result.rows[0];
@@ -87,47 +83,7 @@ async function handleSubscriptionDeleted(subscription) {
     return;
   }
 
-  await pool.query(`UPDATE etablissements SET abonnement_statut = 'resilie' WHERE id = $1`, [etablissement.id]);
-
-  if (etablissement.mois_payes >= MOIS_ENGAGEMENT_MINIMUM) {
-    console.log(`${etablissement.nom}: résiliation après ${etablissement.mois_payes} mois, pas de frais.`);
-    return;
-  }
-
-  console.log(
-    `${etablissement.nom}: résiliation après seulement ${etablissement.mois_payes} mois — facturation de 45€.`
-  );
-
-  try {
-    const paymentMethod =
-      subscription.default_payment_method ||
-      (await stripe.customers.retrieve(etablissement.stripe_customer_id)).invoice_settings
-        ?.default_payment_method;
-
-    if (!paymentMethod) {
-      throw new Error('Aucun moyen de paiement enregistré pour ce client');
-    }
-
-    await stripe.paymentIntents.create({
-      amount: PRIX_PLAQUE_CENTIMES,
-      currency: 'eur',
-      customer: etablissement.stripe_customer_id,
-      payment_method: paymentMethod,
-      off_session: true,
-      confirm: true,
-      description: `Frais de plaque (résiliation avant ${MOIS_ENGAGEMENT_MINIMUM} mois) — ${etablissement.nom}`,
-    });
-
-    await pool.query(`UPDATE etablissements SET abonnement_statut = 'resilie_facture' WHERE id = $1`, [
-      etablissement.id,
-    ]);
-    console.log(`${etablissement.nom}: 45€ facturés avec succès.`);
-  } catch (err) {
-    console.error(`${etablissement.nom}: échec de la facturation des 45€ à la résiliation:`, err.message);
-    await pool.query(`UPDATE etablissements SET abonnement_statut = 'resilie_echec_facturation' WHERE id = $1`, [
-      etablissement.id,
-    ]);
-  }
+  console.log(`${etablissement.nom}: abonnement résilié, la plaque cessera de rediriger vers Google.`);
 }
 
 async function handleStripeEvent(event) {

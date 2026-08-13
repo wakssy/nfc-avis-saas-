@@ -43,6 +43,7 @@ router.post('/:token/checkout', async (req, res) => {
   try {
     const session = await stripe.checkout.sessions.create({
       mode: isAbonnement ? 'subscription' : 'payment',
+      payment_method_types: ['card'],
       line_items: [
         {
           price: isAbonnement ? process.env.STRIPE_PRICE_ABONNEMENT : process.env.STRIPE_PRICE_PLAQUE,

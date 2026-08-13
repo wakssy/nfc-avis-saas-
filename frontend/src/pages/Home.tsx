@@ -266,7 +266,7 @@ function Home() {
                 <p className="price-amount">
                   14,99 € <span>/mois</span>
                 </p>
-                <p className="price-detail">Plaque offerte. Engagement minimum de 2 mois.</p>
+                <p className="price-detail">Plaque offerte. Sans engagement, résiliable à tout moment.</p>
                 <ul className="price-features">
                   <li>Tout ce qui est inclus dans l'offre Plaque seule</li>
                   <li>Tableau de bord complet : scans, évolution des avis, alertes, objectifs</li>
@@ -320,8 +320,8 @@ function Home() {
                 <div className="why-icon">
                   <IconCalendar />
                 </div>
-                <h3>Sans engagement long</h3>
-                <p>Deux mois minimum sur l'abonnement, résiliable ensuite à tout moment.</p>
+                <h3>Sans engagement</h3>
+                <p>Résiliez quand vous voulez, aucune durée minimum imposée.</p>
               </div>
             </Reveal>
           </div>
