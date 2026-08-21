@@ -4,6 +4,7 @@ const requireMerchant = require('../middleware/requireMerchant');
 const { getStatsForEtablissement } = require('../lib/stats');
 const { getAvisHistorique } = require('../lib/avisStats');
 const { getPositionnement } = require('../lib/concurrents');
+const { getScoreVisibilite } = require('../lib/scoreVisibilite');
 const { genererReponseAvis } = require('../lib/claude');
 
 const router = express.Router();
@@ -32,6 +33,16 @@ router.get('/positionnement', requireMerchant, async (req, res) => {
   try {
     const positionnement = await getPositionnement(req.session.etablissementId);
     res.json(positionnement);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+router.get('/score-visibilite', requireMerchant, async (req, res) => {
+  try {
+    const score = await getScoreVisibilite(req.session.etablissementId);
+    res.json(score);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Erreur serveur' });

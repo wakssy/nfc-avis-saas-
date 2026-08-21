@@ -36,6 +36,18 @@ interface Positionnement {
   phrase: string;
 }
 
+interface ScoreVisibilite {
+  score: number;
+  niveau: string;
+  avecPositionnement: boolean;
+}
+
+function scoreVisibiliteColor(niveau: string) {
+  if (niveau === 'Excellent' || niveau === 'Bon') return 'var(--success)';
+  if (niveau === 'Moyen') return 'var(--warning)';
+  return 'var(--danger)';
+}
+
 function objectifMeterClass(percent: number) {
   if (percent < 30) return 'low';
   if (percent < 70) return 'mid';
@@ -200,6 +212,7 @@ function MerchantDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [avis, setAvis] = useState<AvisHistorique | null>(null);
   const [positionnement, setPositionnement] = useState<Positionnement | null>(null);
+  const [scoreVisibilite, setScoreVisibilite] = useState<ScoreVisibilite | null>(null);
   const navigate = useNavigate();
 
   async function loadStats() {
@@ -226,10 +239,18 @@ function MerchantDashboard() {
     }
   }
 
+  async function loadScoreVisibilite() {
+    const res = await apiFetch('/merchant/score-visibilite');
+    if (res.ok) {
+      setScoreVisibilite(await res.json());
+    }
+  }
+
   useEffect(() => {
     loadStats();
     loadAvis();
     loadPositionnement();
+    loadScoreVisibilite();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -268,6 +289,24 @@ function MerchantDashboard() {
               ? 'Aucun scan enregistré pour le moment — vérifiez que votre plaque est bien visible et accessible.'
               : `Aucun scan enregistré depuis ${stats.joursDepuisDernierScan} jours — vérifiez que votre plaque est bien visible et accessible.`}
           </span>
+        </div>
+      )}
+
+      {scoreVisibilite && (
+        <div className="card" style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 18 }}>
+          <div style={{ fontSize: 40, fontWeight: 700, color: scoreVisibiliteColor(scoreVisibilite.niveau) }}>
+            {scoreVisibilite.score}
+          </div>
+          <div>
+            <p className="section-title" style={{ margin: 0 }}>
+              Score de visibilité
+            </p>
+            <p className="subtitle" style={{ margin: 0 }}>
+              {scoreVisibilite.niveau}
+              {!scoreVisibilite.avecPositionnement &&
+                ' — activez la comparaison avec la concurrence pour un score plus précis'}
+            </p>
+          </div>
         </div>
       )}
 

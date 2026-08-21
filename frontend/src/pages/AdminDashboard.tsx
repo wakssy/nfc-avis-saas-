@@ -107,6 +107,25 @@ function EtablissementRow({
     onChanged();
   }
 
+  async function handlePaiementManuel() {
+    if (
+      !window.confirm(
+        `Marquer "${e.nom}" comme payé en liquide (plaque seule) ? Ceci active l'accès sans passer par Stripe.`
+      )
+    ) {
+      return;
+    }
+
+    const res = await apiFetch(`/admin/etablissements/${e.id}/paiement-manuel`, { method: 'PUT' });
+
+    if (!res.ok) {
+      alert('Erreur lors de la mise à jour du paiement');
+      return;
+    }
+
+    onChanged();
+  }
+
   async function handleInvite() {
     const targetEmail = e.email || window.prompt("Email du commerçant pour l'inviter :");
     if (!targetEmail) return;
@@ -278,6 +297,11 @@ function EtablissementRow({
           )}
           <button className="btn btn-sm" onClick={handleLienPaiement}>
             {e.paiement_token ? 'Copier le lien' : 'Générer le lien'}
+          </button>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+          <button className="btn-link" style={{ fontSize: 12 }} onClick={handlePaiementManuel}>
+            Payé liquide (plaque seule)
           </button>
         </div>
       </td>
