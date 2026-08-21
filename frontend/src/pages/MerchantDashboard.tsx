@@ -320,6 +320,9 @@ function MerchantDashboard() {
             </p>
             <p className="subtitle" style={{ margin: 0 }}>
               {scoreVisibilite.niveau}
+              {!scoreVisibilite.evolution &&
+                scoreVisibilite.score >= 70 &&
+                ' — objectif : le maintenir dans la durée'}
               {!scoreVisibilite.avecPositionnement &&
                 ' — activez la comparaison avec la concurrence pour un score plus précis'}
             </p>
