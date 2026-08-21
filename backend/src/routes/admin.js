@@ -3,8 +3,8 @@ const pool = require('../db');
 const requireAdmin = require('../middleware/requireAdmin');
 const generateId = require('../lib/generateId');
 const { getStatsForEtablissement } = require('../lib/stats');
-const { getAvisHistorique } = require('../lib/avisStats');
-const { getPositionnement } = require('../lib/concurrents');
+const { getAvisHistorique, syncAvisEtablissement } = require('../lib/avisStats');
+const { getPositionnement, syncConcurrentHistorique } = require('../lib/concurrents');
 const { resolvePlaceId, getPlaceLocationAndType, searchNearbyCompetitors } = require('../lib/googlePlaces');
 const { createInvitation, trySendInvitationEmail } = require('../lib/invitation');
 const { getOrCreatePaiementToken } = require('../lib/paiementToken');
@@ -215,12 +215,21 @@ router.post('/etablissements/:id/lien-paiement', requireAdmin, async (req, res) 
 
 router.put('/etablissements/:id/paiement-manuel', requireAdmin, async (req, res) => {
   const result = await pool.query(
-    `UPDATE etablissements SET abonnement_statut = 'plaque_seule' WHERE id = $1 RETURNING id`,
+    `UPDATE etablissements SET abonnement_statut = 'plaque_seule' WHERE id = $1 RETURNING id, place_id`,
     [req.params.id]
   );
 
   if (result.rows.length === 0) {
     return res.status(404).json({ error: 'Établissement introuvable' });
+  }
+
+  const { place_id: placeId } = result.rows[0];
+  if (placeId) {
+    try {
+      await syncAvisEtablissement(req.params.id, placeId);
+    } catch (err) {
+      console.error("Échec de la synchronisation immédiate des avis:", err.message);
+    }
   }
 
   res.json({ status: 'ok', abonnementStatut: 'plaque_seule' });
@@ -287,6 +296,14 @@ router.post('/etablissements/:id/concurrents/recherche', requireAdmin, async (re
       throw err;
     } finally {
       client.release();
+    }
+
+    for (const c of concurrents) {
+      try {
+        await syncConcurrentHistorique(id, c.placeId, c.nom);
+      } catch (err) {
+        console.error(`${c.nom}: échec de la synchronisation immédiate`, err.message);
+      }
     }
 
     res.json({ concurrents, typeUtilise: type, typeDetecte });

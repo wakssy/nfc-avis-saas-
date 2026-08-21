@@ -1,4 +1,22 @@
 const pool = require('../db');
+const { getPlaceDetails } = require('./googlePlaces');
+
+async function syncAvisEtablissement(etablissementId, placeId) {
+  const { rating, userRatingCount } = await getPlaceDetails(placeId);
+  if (rating === null || userRatingCount === null) {
+    return { success: false };
+  }
+
+  await pool.query(
+    `INSERT INTO avis_historique (etablissement_id, date, nombre_avis, note_moyenne)
+     VALUES ($1, CURRENT_DATE, $2, $3)
+     ON CONFLICT (etablissement_id, date)
+     DO UPDATE SET nombre_avis = EXCLUDED.nombre_avis, note_moyenne = EXCLUDED.note_moyenne`,
+    [etablissementId, userRatingCount, rating]
+  );
+
+  return { success: true, rating, userRatingCount };
+}
 
 async function getAvisHistorique(etablissementId) {
   const { rows } = await pool.query(
@@ -36,4 +54,4 @@ async function getAvisHistorique(etablissementId) {
   };
 }
 
-module.exports = { getAvisHistorique };
+module.exports = { getAvisHistorique, syncAvisEtablissement };

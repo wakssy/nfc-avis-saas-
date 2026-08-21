@@ -1,4 +1,22 @@
 const pool = require('../db');
+const { getPlaceDetails } = require('./googlePlaces');
+
+async function syncConcurrentHistorique(etablissementId, concurrentPlaceId, concurrentNom) {
+  const { rating, userRatingCount } = await getPlaceDetails(concurrentPlaceId);
+  if (rating === null || userRatingCount === null) {
+    return { success: false };
+  }
+
+  await pool.query(
+    `INSERT INTO concurrents_historique (etablissement_id, concurrent_place_id, concurrent_nom, date, nombre_avis, note_moyenne)
+     VALUES ($1, $2, $3, CURRENT_DATE, $4, $5)
+     ON CONFLICT (etablissement_id, concurrent_place_id, date)
+     DO UPDATE SET nombre_avis = EXCLUDED.nombre_avis, note_moyenne = EXCLUDED.note_moyenne, concurrent_nom = EXCLUDED.concurrent_nom`,
+    [etablissementId, concurrentPlaceId, concurrentNom, userRatingCount, rating]
+  );
+
+  return { success: true, rating, userRatingCount };
+}
 
 async function getPositionnement(etablissementId) {
   const { rows: etabRows } = await pool.query(
@@ -47,4 +65,4 @@ async function getPositionnement(etablissementId) {
   return { positions, rang, total, phrase };
 }
 
-module.exports = { getPositionnement };
+module.exports = { getPositionnement, syncConcurrentHistorique };

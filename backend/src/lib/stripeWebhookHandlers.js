@@ -1,5 +1,6 @@
 const pool = require('../db');
 const { createInvitation, trySendInvitationEmail } = require('./invitation');
+const { syncAvisEtablissement } = require('./avisStats');
 
 function getInvoiceSubscriptionId(invoice) {
   return invoice.subscription || invoice.parent?.subscription_details?.subscription || null;
@@ -42,6 +43,15 @@ async function handleCheckoutCompleted(session) {
   }
 
   await inviteIfNeeded(etablissementId);
+
+  const { rows } = await pool.query('SELECT place_id FROM etablissements WHERE id = $1', [etablissementId]);
+  if (rows[0]?.place_id) {
+    try {
+      await syncAvisEtablissement(etablissementId, rows[0].place_id);
+    } catch (err) {
+      console.error("Échec de la synchronisation immédiate des avis:", err.message);
+    }
+  }
 }
 
 async function handleInvoicePaid(invoice) {

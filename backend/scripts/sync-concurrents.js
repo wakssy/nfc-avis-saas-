@@ -1,6 +1,6 @@
 require('dotenv').config();
 const pool = require('../src/db');
-const { getPlaceDetails } = require('../src/lib/googlePlaces');
+const { syncConcurrentHistorique } = require('../src/lib/concurrents');
 
 async function syncConcurrents() {
   const { rows: concurrents } = await pool.query(
@@ -11,22 +11,12 @@ async function syncConcurrents() {
 
   for (const c of concurrents) {
     try {
-      const { rating, userRatingCount } = await getPlaceDetails(c.concurrent_place_id);
-
-      if (rating === null || userRatingCount === null) {
+      const result = await syncConcurrentHistorique(c.etablissement_id, c.concurrent_place_id, c.concurrent_nom);
+      if (!result.success) {
         console.warn(`${c.concurrent_nom}: réponse incomplète de Places API, ignoré`);
         continue;
       }
-
-      await pool.query(
-        `INSERT INTO concurrents_historique (etablissement_id, concurrent_place_id, concurrent_nom, date, nombre_avis, note_moyenne)
-         VALUES ($1, $2, $3, CURRENT_DATE, $4, $5)
-         ON CONFLICT (etablissement_id, concurrent_place_id, date)
-         DO UPDATE SET nombre_avis = EXCLUDED.nombre_avis, note_moyenne = EXCLUDED.note_moyenne, concurrent_nom = EXCLUDED.concurrent_nom`,
-        [c.etablissement_id, c.concurrent_place_id, c.concurrent_nom, userRatingCount, rating]
-      );
-
-      console.log(`${c.concurrent_nom}: ${userRatingCount} avis, note ${rating}`);
+      console.log(`${c.concurrent_nom}: ${result.userRatingCount} avis, note ${result.rating}`);
     } catch (err) {
       console.error(`${c.concurrent_nom}: échec de la synchronisation`, err.message);
     }
