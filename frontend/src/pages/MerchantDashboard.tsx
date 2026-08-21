@@ -40,12 +40,29 @@ interface ScoreVisibilite {
   score: number;
   niveau: string;
   avecPositionnement: boolean;
+  evolution: { diffScore: number; nouveauxAvis: number } | null;
 }
 
 function scoreVisibiliteColor(niveau: string) {
   if (niveau === 'Excellent' || niveau === 'Bon') return 'var(--success)';
   if (niveau === 'Moyen') return 'var(--warning)';
   return 'var(--danger)';
+}
+
+function phraseEvolution(evolution: ScoreVisibilite['evolution']) {
+  if (!evolution) return null;
+  const { diffScore, nouveauxAvis } = evolution;
+
+  if (diffScore === 0) return 'Stable ce mois-ci';
+
+  const signe = diffScore > 0 ? '+' : '';
+  const base = `${signe}${diffScore} point${Math.abs(diffScore) > 1 ? 's' : ''} ce mois-ci`;
+
+  if (diffScore > 0 && nouveauxAvis > 0) {
+    return `${base}, grâce à ${nouveauxAvis} nouvel${nouveauxAvis > 1 ? 's' : ''} avis`;
+  }
+
+  return base;
 }
 
 function objectifMeterClass(percent: number) {
@@ -306,6 +323,11 @@ function MerchantDashboard() {
               {!scoreVisibilite.avecPositionnement &&
                 ' — activez la comparaison avec la concurrence pour un score plus précis'}
             </p>
+            {scoreVisibilite.evolution && (
+              <p style={{ margin: '2px 0 0', fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>
+                {phraseEvolution(scoreVisibilite.evolution)}
+              </p>
+            )}
           </div>
         </div>
       )}
